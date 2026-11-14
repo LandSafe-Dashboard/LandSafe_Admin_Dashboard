@@ -1,0 +1,1442 @@
+/* LandSafe Mobile — Sira-Inspired Disaster Early Warning Interface
+ * Color System: Clean White (#FFFFFF), Primary Blue (#2563EB), Soft Blue (#EFF6FF / #DBEAFE)
+ * Risk Palette: Safe Green (#16A34A), Warning Amber (#F59E0B), Danger Red (#DC2626)
+ */
+
+:root {
+  --ls-bg: #F8FAFC;
+  --ls-surface: #FFFFFF;
+  --ls-surface-subtle: #F1F5F9;
+  --ls-surface-elevated: #FFFFFF;
+  --ls-border: #E2E8F0;
+  --ls-border-light: #F1F5F9;
+  
+  --ls-primary: #2563EB;
+  --ls-primary-dark: #1D4ED8;
+  --ls-primary-soft: #EFF6FF;
+  --ls-primary-tint: #DBEAFE;
+  
+  --ls-safe: #16A34A;
+  --ls-safe-soft: #DCFCE7;
+  --ls-safe-border: #86EFAC;
+  
+  --ls-warning: #F59E0B;
+  --ls-warning-soft: #FEF3C7;
+  --ls-warning-border: #FCD34D;
+  
+  --ls-danger: #DC2626;
+  --ls-danger-soft: #FEE2E2;
+  --ls-danger-border: #FCA5A5;
+  
+  --ls-sim: #7E22CE;
+  --ls-sim-soft: #F3E8FF;
+  --ls-sim-border: #D8B4FE;
+  
+  --ls-text: #0F172A;
+  --ls-text-muted: #64748B;
+  --ls-text-faint: #94A3B8;
+  
+  --ls-radius-sm: 8px;
+  --ls-radius: 16px;
+  --ls-radius-lg: 22px;
+  
+  --ls-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --ls-shadow: 0 4px 14px rgba(37, 99, 235, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+  --ls-shadow-lg: 0 10px 25px -5px rgba(37, 99, 235, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* {
+  box-sizing: border-box;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  background: var(--ls-bg);
+  color: var(--ls-text);
+  overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  position: relative;
+  background: var(--ls-bg);
+  overflow: hidden;
+}
+
+/* Page container */
+.page-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.page {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow-y: auto;
+  padding-bottom: calc(72px + var(--safe-area-bottom));
+  -webkit-overflow-scrolling: touch;
+}
+
+.page.active {
+  display: block;
+  animation: page-fade-in 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float-icon {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-4px) rotate(3deg); }
+}
+
+@keyframes danger-soft-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  50% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12); }
+}
+
+.ls-weather-icon {
+  animation: float-icon 3.6s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   SIRA-INSPIRED BLUE HERO HEADER
+   ═════════════════════════════════════════════════════════════════════ */
+.ls-hero-header {
+  background: linear-gradient(135deg, #1E40AF 0%, #2563EB 60%, #3B82F6 100%);
+  color: #FFFFFF;
+  padding: calc(14px + var(--safe-area-top)) 16px 22px 16px;
+  border-bottom-left-radius: 26px;
+  border-bottom-right-radius: 26px;
+  box-shadow: 0 4px 20px rgba(37, 99, 235, 0.25);
+  position: relative;
+  z-index: 10;
+}
+
+.ls-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.ls-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ls-brand-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.ls-brand-text {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.ls-brand-sub {
+  font-size: 10px;
+  opacity: 0.85;
+  font-weight: 500;
+}
+
+.ls-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ls-status-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(6px);
+  font-size: 10.5px;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.ls-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22C55E;
+  box-shadow: 0 0 8px #22C55E;
+  animation: pulse-dot 1.8s infinite;
+}
+
+@keyframes pulse-dot {
+  0% { transform: scale(0.9); opacity: 0.8; }
+  50% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.8; }
+}
+
+.ls-icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  border: none;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.15s, background 0.15s;
+}
+
+.ls-icon-btn:active {
+  transform: scale(0.92);
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.ls-unread-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: #EF4444;
+  color: #FFFFFF;
+  font-size: 9px;
+  font-weight: 800;
+  min-width: 17px;
+  height: 17px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid #2563EB;
+}
+
+/* Greeting / Location Bar in Hero */
+.ls-location-bar {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: var(--ls-radius);
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.ls-loc-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ls-loc-text-main {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ls-loc-text-sub {
+  font-size: 10.5px;
+  opacity: 0.85;
+}
+
+.ls-btn-locate {
+  background: #FFFFFF;
+  color: var(--ls-primary);
+  border: none;
+  border-radius: 12px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: transform 0.15s, background 0.15s;
+}
+
+.ls-btn-locate:active {
+  transform: scale(0.95);
+  background: #EFF6FF;
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   SIRA WEATHER CARD (Floating Rounded White Card)
+   ═════════════════════════════════════════════════════════════════════ */
+.ls-weather-card {
+  background: #FFFFFF;
+  border-radius: var(--ls-radius-lg);
+  padding: 16px;
+  margin: -14px 14px 14px 14px;
+  box-shadow: var(--ls-shadow);
+  border: 1px solid var(--ls-border);
+  position: relative;
+  z-index: 12;
+}
+
+.ls-weather-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ls-border-light);
+}
+
+.ls-temp-col {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ls-temp-val {
+  font-size: 34px;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: var(--ls-text);
+  line-height: 1;
+}
+
+.ls-temp-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.ls-weather-desc {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ls-text);
+}
+
+.ls-weather-sub {
+  font-size: 10.5px;
+  color: var(--ls-text-muted);
+}
+
+.ls-weather-icon {
+  font-size: 40px;
+  color: #F59E0B;
+}
+
+.ls-weather-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.ls-weather-chip {
+  background: var(--ls-surface-subtle);
+  border-radius: var(--ls-radius-sm);
+  padding: 7px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.ls-weather-chip-label {
+  font-size: 9px;
+  color: var(--ls-text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.ls-weather-chip-val {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ls-text);
+  margin-top: 2px;
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   SIRA RISK ASSESSMENT CARD (Speedometer Gauge with Needle)
+   ═════════════════════════════════════════════════════════════════════ */
+.ls-risk-card {
+  background: #FFFFFF;
+  border-radius: var(--ls-radius-lg);
+  padding: 18px 16px;
+  margin: 0 14px 14px 14px;
+  box-shadow: var(--ls-shadow);
+  border: 1px solid var(--ls-border);
+}
+
+.ls-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.ls-card-title {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: var(--ls-text);
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ls-card-tag {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 12px;
+}
+
+.ls-gauge-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  padding: 6px 0 2px 0;
+}
+
+.ls-gauge-svg {
+  width: 220px;
+  height: 120px;
+  overflow: visible;
+}
+
+.ls-needle {
+  transform-origin: 100px 95px;
+  transition: transform 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.ls-gauge-status {
+  text-align: center;
+  margin-top: -6px;
+}
+
+.ls-gauge-label {
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.ls-gauge-desc {
+  font-size: 11.5px;
+  color: var(--ls-text-muted);
+  margin-top: 4px;
+  line-height: 1.4;
+  max-width: 300px;
+}
+
+.ls-factors-box {
+  background: var(--ls-surface-subtle);
+  border-radius: var(--ls-radius);
+  padding: 10px 12px;
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--ls-text-muted);
+  line-height: 1.5;
+  border: 1px solid var(--ls-border);
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   MULTI-DEPTH SOIL MOISTURE SECTION
+   ═════════════════════════════════════════════════════════════════════ */
+.ls-section-card {
+  background: #FFFFFF;
+  border-radius: var(--ls-radius-lg);
+  padding: 16px;
+  margin: 0 14px 14px 14px;
+  box-shadow: var(--ls-shadow);
+  border: 1px solid var(--ls-border);
+}
+
+.ls-soil-tiers {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.ls-soil-row {
+  background: var(--ls-surface-subtle);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--ls-border-light);
+}
+
+.ls-soil-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.ls-soil-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ls-text);
+}
+
+.ls-soil-depth {
+  font-size: 10px;
+  color: var(--ls-text-faint);
+}
+
+.ls-soil-bar-wrap {
+  flex: 1;
+  max-width: 100px;
+  height: 7px;
+  background: #E2E8F0;
+  border-radius: 4px;
+  margin: 0 12px;
+  overflow: hidden;
+}
+
+.ls-soil-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+
+.ls-soil-val {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ls-text);
+  min-width: 38px;
+  text-align: right;
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   GROUND MOVEMENT / ADXL & WEIGHT SENSOR
+   ═════════════════════════════════════════════════════════════════════ */
+.ls-motion-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.ls-motion-box {
+  background: var(--ls-surface-subtle);
+  border-radius: 14px;
+  padding: 12px;
+  border: 1px solid var(--ls-border-light);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.ls-motion-badge {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 6px;
+  align-self: flex-start;
+  margin-bottom: 6px;
+}
+
+.ls-motion-val {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--ls-text);
+  line-height: 1.2;
+}
+
+.ls-motion-label {
+  font-size: 10.5px;
+  color: var(--ls-text-muted);
+  margin-top: 2px;
+}
+
+.ls-motion-sub {
+  font-size: 9.5px;
+  color: var(--ls-text-faint);
+  margin-top: 4px;
+  font-family: monospace;
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   NEAREST MONITORING POLE CARD
+   ═════════════════════════════════════════════════════════════════════ */
+.ls-nearest-card {
+  background: #FFFFFF;
+  border-radius: var(--ls-radius-lg);
+  padding: 14px 16px;
+  margin: 0 14px 14px 14px;
+  box-shadow: var(--ls-shadow);
+  border: 1px solid var(--ls-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s ease;
+}
+
+.ls-nearest-card:active {
+  transform: scale(0.98);
+}
+
+.ls-nearest-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ls-nearest-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--ls-primary-soft);
+  color: var(--ls-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.ls-nearest-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ls-text);
+}
+
+.ls-nearest-sub {
+  font-size: 11px;
+  color: var(--ls-text-muted);
+  margin-top: 2px;
+}
+
+.ls-btn-view-pole {
+  background: var(--ls-primary-soft);
+  color: var(--ls-primary);
+  border: 1px solid var(--ls-primary-tint);
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: transform 0.15s, background 0.15s;
+}
+
+.ls-btn-view-pole:active {
+  transform: scale(0.94);
+  background: var(--ls-primary-tint);
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   MAP SCREEN
+   ═════════════════════════════════════════════════════════════════════ */
+.ls-map-wrap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: calc(64px + var(--safe-area-bottom));
+}
+
+#poleMap {
+  width: 100%;
+  height: 100%;
+}
+
+.ls-map-floating-search {
+  position: absolute;
+  top: calc(14px + var(--safe-area-top));
+  left: 14px;
+  right: 14px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  background: #FFFFFF;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  padding: 4px 10px;
+  border: 1px solid var(--ls-border);
+}
+
+.ls-map-search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  padding: 8px 6px;
+  font-size: 13px;
+  background: transparent;
+  color: var(--ls-text);
+}
+
+.ls-btn-map-locate {
+  position: absolute;
+  right: 16px;
+  bottom: 84px;
+  z-index: 1000;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  color: var(--ls-primary);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--ls-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.ls-btn-map-locate:active {
+  transform: scale(0.92);
+}
+
+/* User Blue Dot on Map */
+.ls-user-pin {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #2563EB;
+  border: 3px solid #FFFFFF;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.6);
+  position: relative;
+}
+
+.ls-user-pin::after {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.25);
+  animation: radar-pulse 2s infinite ease-out;
+}
+
+@keyframes radar-pulse {
+  0% { transform: scale(0.8); opacity: 0.9; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* Map Pole Slide-Up Preview Sheet */
+.ls-pole-sheet {
+  position: absolute;
+  bottom: calc(70px + var(--safe-area-bottom));
+  left: 14px;
+  right: 14px;
+  z-index: 1000;
+  background: #FFFFFF;
+  border-radius: 20px;
+  padding: 16px;
+  box-shadow: var(--ls-shadow-lg);
+  border: 1px solid var(--ls-border);
+  display: none;
+  animation: slide-up 0.25s ease-out;
+}
+
+@keyframes slide-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   POLE DETAILS SCREEN (Matching Sira's 3rd Screen)
+   ═════════════════════════════════════════════════════════════════════ */
+.ls-details-header {
+  background: #FFFFFF;
+  padding: calc(14px + var(--safe-area-top)) 16px 14px 16px;
+  border-bottom: 1px solid var(--ls-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.ls-btn-back {
+  background: var(--ls-surface-subtle);
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: var(--ls-text);
+  cursor: pointer;
+}
+
+.ls-details-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ls-text);
+}
+
+.ls-pole-hero {
+  padding: 16px;
+  background: #FFFFFF;
+  border-bottom: 1px solid var(--ls-border);
+}
+
+.ls-pole-hero-id {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--ls-text);
+}
+
+.ls-pole-hero-meta {
+  font-size: 12px;
+  color: var(--ls-text-muted);
+  margin-top: 4px;
+}
+
+.ls-stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.ls-stats-table td {
+  padding: 10px 12px;
+  font-size: 12px;
+  border-bottom: 1px solid var(--ls-border-light);
+}
+
+.ls-stats-table tr:last-child td {
+  border-bottom: none;
+}
+
+.ls-stat-name {
+  color: var(--ls-text-muted);
+  font-weight: 600;
+}
+
+.ls-stat-val {
+  text-align: right;
+  font-weight: 800;
+  color: var(--ls-text);
+}
+
+.ls-chart-container {
+  height: 220px;
+  width: 100%;
+  margin-top: 10px;
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   ALERTS SCREEN (Matching Image 1)
+   ═════════════════════════════════════════════════════════════════════ */
+.ls-alerts-header {
+  background: #FFFFFF;
+  padding: calc(14px + var(--safe-area-top)) 16px 12px 16px;
+  border-bottom: 1px solid var(--ls-border);
+}
+
+.ls-alerts-title {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--ls-text);
+  letter-spacing: -0.02em;
+}
+
+.ls-filter-bar {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 12px 16px 14px 16px;
+  scrollbar-width: none;
+  white-space: nowrap;
+  scroll-snap-type: x proximity;
+  -ms-overflow-style: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ls-filter-bar::-webkit-scrollbar {
+  display: none;
+  height: 0;
+  width: 0;
+}
+
+.ls-filter-pill {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  background: #FFFFFF;
+  border: 1px solid var(--ls-border);
+  color: var(--ls-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  scroll-snap-align: start;
+  transition: all 0.15s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ls-filter-pill.active {
+  background: var(--ls-primary);
+  color: #FFFFFF;
+  border-color: var(--ls-primary);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+}
+
+.ls-alert-group-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ls-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 12px 16px 6px 16px;
+}
+
+.ls-alert-card {
+  background: #FFFFFF;
+  border-radius: var(--ls-radius);
+  padding: 14px;
+  margin: 0 14px 10px 14px;
+  box-shadow: var(--ls-shadow-sm);
+  border: 1px solid var(--ls-border);
+  border-left: 4px solid var(--ls-border);
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s ease;
+}
+
+.ls-alert-card:active {
+  transform: scale(0.98);
+}
+
+.ls-alert-card.critical {
+  border-left-color: var(--ls-danger);
+  background: #FFFAFA;
+}
+
+.ls-alert-card.critical .ls-alert-badge {
+  animation: danger-soft-pulse 2s infinite ease-in-out;
+}
+
+.ls-alert-card.warning {
+  border-left-color: var(--ls-warning);
+  background: #FFFDF7;
+}
+
+.ls-alert-card.offline {
+  border-left-color: var(--ls-text-faint);
+}
+
+.ls-alert-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.ls-alert-badge {
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.ls-alert-title {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--ls-text);
+}
+
+.ls-alert-body {
+  font-size: 11.5px;
+  color: var(--ls-text-muted);
+  line-height: 1.45;
+  margin: 4px 0 8px 0;
+}
+
+.ls-alert-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--ls-text-faint);
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   SETTINGS SCREEN
+   ═════════════════════════════════════════════════════════════════════ */
+.ls-settings-group {
+  background: #FFFFFF;
+  border-radius: var(--ls-radius-lg);
+  margin: 0 14px 14px 14px;
+  box-shadow: var(--ls-shadow);
+  border: 1px solid var(--ls-border);
+  overflow: hidden;
+}
+
+.ls-settings-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--ls-border-light);
+}
+
+.ls-settings-item:last-child {
+  border-bottom: none;
+}
+
+.ls-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.ls-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.ls-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #CBD5E1;
+  transition: 0.25s;
+  border-radius: 24px;
+}
+
+.ls-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.25s;
+  border-radius: 50%;
+}
+
+input:checked + .ls-slider {
+  background-color: var(--ls-primary);
+}
+
+input:checked + .ls-slider:before {
+  transform: translateX(20px);
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   BOTTOM NAVIGATION BAR
+   ═════════════════════════════════════════════════════════════════════ */
+.ls-bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-width: 500px;
+  margin: 0 auto;
+  background: #FFFFFF;
+  border-top: 1px solid var(--ls-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding-bottom: var(--safe-area-bottom);
+  height: calc(60px + var(--safe-area-bottom));
+  z-index: 200;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.04);
+}
+
+.ls-nav-btn {
+  background: none;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  color: var(--ls-text-faint);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.15s, transform 0.1s;
+}
+
+.ls-nav-btn:active {
+  transform: scale(0.92);
+}
+
+.ls-nav-btn.active {
+  color: var(--ls-primary);
+}
+
+.ls-nav-btn iconify-icon {
+  font-size: 22px;
+  margin-bottom: 2px;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.ls-nav-btn.active iconify-icon {
+  transform: translateY(-2px) scale(1.12);
+}
+
+.ls-nav-badge {
+  position: absolute;
+  top: 4px;
+  right: 14px;
+  background: var(--ls-danger);
+  color: #FFFFFF;
+  font-size: 8.5px;
+  font-weight: 800;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   TOAST NOTIFICATION
+   ═════════════════════════════════════════════════════════════════════ */
+.ls-toast-box {
+  position: fixed;
+  bottom: calc(74px + var(--safe-area-bottom));
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(8px);
+  color: #FFFFFF;
+  padding: 10px 18px;
+  border-radius: 24px;
+  font-size: 12px;
+  font-weight: 700;
+  z-index: 1000;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+  white-space: nowrap;
+}
+
+.ls-toast-box.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+
+/* ═════════════════════════════════════════════════════════════════════
+   EMERGENCY HOTLINE CALLING DIRECTORY (Direct Dialing)
+   ═════════════════════════════════════════════════════════════════════ */
+.ls-hotline-section {
+  margin: 12px 14px 14px 14px;
+}
+
+.ls-hotline-card {
+  background: #FFFFFF;
+  border-radius: var(--ls-radius);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  box-shadow: var(--ls-shadow-sm);
+  border: 1px solid var(--ls-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s ease;
+}
+
+.ls-hotline-card:active {
+  transform: scale(0.98);
+}
+
+.ls-hotline-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ls-hotline-num {
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--ls-primary);
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ls-hotline-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ls-text);
+  margin-top: 2px;
+  line-height: 1.25;
+}
+
+.ls-hotline-desc {
+  font-size: 10.5px;
+  color: var(--ls-text-muted);
+  margin-top: 2px;
+  line-height: 1.3;
+}
+
+.ls-call-pill {
+  background: #22C55E;
+  color: #FFFFFF;
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 8px 12px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.35);
+  flex-shrink: 0;
+  transition: transform 0.15s, background 0.15s;
+}
+
+.ls-call-pill:active {
+  transform: scale(0.92);
+  background: #16A34A;
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   SOIL MOISTURE 3-CATEGORIES (Dry, Moderate, Wet)
+   ═════════════════════════════════════════════════════════════════════ */
+.ls-soil-cat-badge {
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+
+.cat-dry {
+  background: #FEF3C7;
+  color: #B45309;
+  border: 1px solid #FCD34D;
+}
+
+.cat-moderate {
+  background: #DCFCE7;
+  color: #15803D;
+  border: 1px solid #86EFAC;
+}
+
+.cat-wet {
+  background: #DBEAFE;
+  color: #1D4ED8;
+  border: 1px solid #93C5FD;
+}
+
+.cat-crit-wet {
+  background: #FEE2E2;
+  color: #B91C1C;
+  border: 1px solid #FCA5A5;
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   POLE SELECTION TABS
+   ═════════════════════════════════════════════════════════════════════ */
+.ls-pole-tabs {
+  display: flex;
+  background: var(--ls-surface-subtle);
+  border-radius: 12px;
+  padding: 3px;
+  margin: 0 14px 12px 14px;
+}
+
+.ls-pole-tab-btn {
+  flex: 1;
+  padding: 8px 0;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--ls-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ls-pole-tab-btn.active {
+  background: #FFFFFF;
+  color: var(--ls-primary);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+
+/* ═════════════════════════════════════════════════════════════════════
+   GRAPHICAL GAUGE & DESKTOP DASHBOARD LINK
+   ═════════════════════════════════════════════════════════════════════ */
+.ls-graphical-gauge {
+  width: 240px;
+  height: 130px;
+  margin: 0 auto;
+  display: block;
+}
+
+.ls-header-link-btn {
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #FFFFFF;
+  text-decoration: none;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  backdrop-filter: blur(6px);
+  transition: all 0.15s;
+}
+
+.ls-header-link-btn:active {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(0.95);
+}
+
+.ls-pole2-card {
+  background: #FFFFFF;
+  border-radius: var(--ls-radius-lg);
+  padding: 16px;
+  margin: 0 14px 14px 14px;
+  box-shadow: var(--ls-shadow);
+  border: 1px solid var(--ls-border);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MONITORING STATION SELECTOR (TASK 2)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.ls-station-selector-card {
+  background: #FFFFFF;
+  border-radius: var(--ls-radius-lg);
+  padding: 12px 14px;
+  margin: 0 14px 12px 14px;
+  box-shadow: var(--ls-shadow);
+  border: 1px solid var(--ls-border);
+}
+
+.ls-station-selector-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.ls-station-sel-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ls-text);
+}
+
+.ls-station-dropdown {
+  background: var(--ls-surface-subtle);
+  border: 1px solid var(--ls-border);
+  border-radius: var(--ls-radius-sm);
+  color: var(--ls-text);
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 6px 12px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.ls-station-dropdown:focus {
+  border-color: var(--ls-primary);
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   COMBINED RISK SOURCE BREAKDOWN BOX
+   ═════════════════════════════════════════════════════════════════════ */
+.ls-risk-sources-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--ls-surface-subtle);
+  border: 1px solid var(--ls-border);
+  border-radius: var(--ls-radius-sm);
+  padding: 8px 12px;
+  margin-top: 10px;
+  font-size: 11px;
+  gap: 6px;
+}
+
+.ls-risk-sources-box .ls-source-item {
+  color: var(--ls-text-muted);
+  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ls-risk-sources-box .ls-source-item span.ls-src-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--ls-text-muted);
+  font-weight: 600;
+}
+
+.ls-risk-sources-box .ls-source-item strong {
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+

@@ -1,0 +1,296 @@
+/* LandSafe mobile / Android presentation layer.
+ * Desktop layout is untouched. Touch targets, safe areas and the bottom
+ * navigation only apply on narrow viewports.
+ */
+
+:root {
+  --ls-bottom-nav-h: 62px;
+  --ls-status-top: env(safe-area-inset-top, 0px);
+}
+
+/* ── Sign-in gate ───────────────────────────────────────────── */
+.ls-auth-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 22px;
+  background:
+    radial-gradient(1100px 600px at 15% -10%, rgba(22, 163, 74, 0.45), transparent 60%),
+    radial-gradient(900px 700px at 110% 110%, rgba(13, 148, 136, 0.35), transparent 55%),
+    linear-gradient(160deg, #071f1b 0%, #0b3b36 52%, #06201d 100%);
+  opacity: 0;
+  transition: opacity 0.22s ease;
+  overflow-y: auto;
+}
+.ls-auth-overlay.visible { opacity: 1; }
+.ls-auth-card {
+  width: 100%;
+  max-width: 390px;
+  margin: auto;
+  background: #ffffff;
+  color: #0f172a;
+  border-radius: 22px;
+  padding: 26px 22px 20px;
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.42);
+  transform: translateY(8px) scale(0.985);
+  transition: transform 0.25s ease;
+}
+.ls-auth-overlay.visible .ls-auth-card { transform: translateY(0) scale(1); }
+.ls-auth-logo {
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 10px;
+  border-radius: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: linear-gradient(135deg, #16a34a, #0d9488);
+  box-shadow: 0 10px 24px rgba(22, 163, 74, 0.35);
+  font-size: 32px;
+}
+.ls-auth-card h1 {
+  margin: 0;
+  text-align: center;
+  font-size: 25px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.ls-auth-sub {
+  margin: 5px 0 20px;
+  text-align: center;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: #64748b;
+}
+.ls-auth-card label {
+  display: block;
+  margin: 0 0 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
+}
+.ls-auth-card input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 13px;
+  margin-bottom: 13px;
+  border: 1px solid #dbe3ea;
+  border-radius: 11px;
+  background: #f8fafc;
+  color: #0f172a;
+  font-size: 15px;
+  outline: none;
+}
+.ls-auth-card input:focus { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.13); }
+.ls-auth-primary {
+  width: 100%;
+  padding: 12px;
+  border: 0;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #16a34a, #0f766e);
+  color: #fff;
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.ls-auth-primary:disabled { opacity: 0.65; }
+.ls-auth-link {
+  display: block;
+  margin: 11px auto 0;
+  border: 0;
+  background: transparent;
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ls-auth-error {
+  min-height: 18px;
+  margin: 9px 0 4px;
+  color: #dc2626;
+  font-size: 12px;
+  line-height: 1.45;
+  text-align: center;
+}
+.ls-auth-secondary {
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px;
+  border: 1px solid #dbe3ea;
+  border-radius: 11px;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ls-auth-note {
+  margin: 14px 0 0;
+  font-size: 10px;
+  line-height: 1.5;
+  color: #94a3b8;
+  text-align: center;
+}
+
+/* ── Top banners (offline / configuration) ──────────────────── */
+.ls-top-banner {
+  position: fixed;
+  top: var(--ls-status-top);
+  left: 0;
+  right: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+}
+.ls-top-banner iconify-icon { font-size: 17px; flex: 0 0 auto; }
+.ls-top-banner span { flex: 1; }
+.ls-top-banner button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 19px;
+  line-height: 1;
+  padding: 2px 4px;
+  cursor: pointer;
+}
+.ls-top-banner-warning { background: #b45309; }
+.ls-top-banner-offline { background: #475569; }
+
+/* ── Foreground notification banner ─────────────────────────── */
+.ls-inapp-alert {
+  position: fixed;
+  top: calc(var(--ls-status-top) + 10px);
+  left: 10px;
+  right: 10px;
+  z-index: 8000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  border-radius: 14px;
+  color: #fff;
+  background: #1e293b;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.3);
+  transform: translateY(-130%);
+  opacity: 0;
+  transition: transform 0.24s ease, opacity 0.24s ease;
+  max-width: 560px;
+  margin: 0 auto;
+}
+.ls-inapp-alert.visible { transform: translateY(0); opacity: 1; }
+.ls-inapp-alert.is-critical { background: linear-gradient(135deg, #b91c1c, #7f1d1d); }
+.ls-inapp-alert.is-warning { background: linear-gradient(135deg, #b45309, #92400e); }
+.ls-inapp-alert.is-info { background: linear-gradient(135deg, #0f766e, #115e59); }
+.ls-inapp-icon { font-size: 24px; flex: 0 0 auto; display: flex; }
+.ls-inapp-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.ls-inapp-text strong { font-size: 12.5px; font-weight: 800; }
+.ls-inapp-text span { font-size: 11px; opacity: 0.92; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ls-inapp-open, .ls-inapp-close {
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.ls-inapp-open {
+  padding: 5px 10px;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+.ls-inapp-close {
+  width: 26px;
+  height: 26px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* ── Bottom navigation ──────────────────────────────────────── */
+#lsBottomNav {
+  display: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  padding: 5px 6px calc(5px + env(safe-area-inset-bottom, 0px));
+  background: rgba(255, 255, 255, 0.96);
+  border-top: 1px solid #e2e8f0;
+  box-shadow: 0 -6px 22px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+[data-theme="dark"] #lsBottomNav {
+  background: rgba(15, 23, 42, 0.96);
+  border-top-color: #1e293b;
+}
+.ls-nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-height: 50px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #64748b;
+  font-size: 9.5px;
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.ls-nav-btn iconify-icon { font-size: 22px; }
+.ls-nav-btn.active { color: #0f766e; background: rgba(15, 118, 110, 0.09); }
+[data-theme="dark"] .ls-nav-btn { color: #94a3b8; }
+[data-theme="dark"] .ls-nav-btn.active { color: #34d399; background: rgba(52, 211, 153, 0.11); }
+
+/* ── Mobile layout ──────────────────────────────────────────── */
+@media (max-width: 900px) {
+  #page-overview .grid[style*="repeat(8"] { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  #page-overview .grid[style*="repeat(6"] { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  #page-overview .grid[style*="repeat(5"] { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  #page-overview .grid[style*="1fr 1fr 1fr 1fr"] { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  #page-live .grid[style*="repeat(4"] { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  #page-settings > .grid { grid-template-columns: 1fr !important; }
+  #page-map3d,
+  #page-pole,
+  #page-threshold,
+  #page-lri-ml,
+  #page-reports { min-width: 0; }
+  .settings-section { padding: 16px; border-radius: 14px; }
+  .card, .chart-card, .stat-card { border-radius: 13px; }
+  main { padding: 12px 12px calc(var(--ls-bottom-nav-h) + 18px) !important; }
+  #lsBottomNav { display: flex; }
+  .modal-box { max-width: 94vw !important; max-height: 88vh; overflow-y: auto; }
+  #page-alerts table { min-width: 760px; }
+  #page-history table { min-width: 900px; }
+  #page-sensors table { min-width: 760px; }
+  #page-reports .grid[style*="1fr 1fr"] { grid-template-columns: 1fr !important; }
+  .ls-inapp-alert {
+    top: calc(var(--ls-status-top) + 8px);
+    left: 8px;
+    right: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .ls-auth-card { padding: 22px 17px 17px; border-radius: 18px; }
+  .ls-auth-card h1 { font-size: 23px; }
+  .ls-nav-btn { font-size: 9px; }
+  .ls-nav-btn iconify-icon { font-size: 21px; }
+  .ls-inapp-text span { white-space: normal; }
+}
