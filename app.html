@@ -1,0 +1,2940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="description" content="LandSafe — IoT-Based Landslide Early Warning System" />
+  <meta name="theme-color" content="#2563EB" />
+  <title>LandSafe Mobile — Pole 2</title>
+
+  <!-- Bundled Local Dependencies -->
+  <script src="vendor/tailwind/tailwind.js"></script>
+  <script src="vendor/echarts/echarts.min.js"></script>
+  <script src="vendor/iconify/iconify-icon.min.js"></script>
+  <script src="vendor/iconify/material-symbols.js"></script>
+  <link href="vendor/fonts/inter.css" rel="stylesheet" />
+
+  <!-- Leaflet Map -->
+  <link href="vendor/leaflet/leaflet.css" rel="stylesheet" />
+  <script src="vendor/leaflet/leaflet.js"></script>
+
+  <!-- Firebase SDK -->
+  <script src="vendor/firebase/firebase-app-compat.js"></script>
+  <script src="vendor/firebase/firebase-database-compat.js"></script>
+  <script src="vendor/firebase/firebase-auth-compat.js"></script>
+
+  <!-- Mobile Stylesheet -->
+  <link rel="stylesheet" href="css/app-mobile.css" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- ═════════════════════════════════════════════════════════════════
+         SIRA-INSPIRED BLUE HERO HEADER
+         ═════════════════════════════════════════════════════════════════ -->
+    <header class="ls-hero-header" id="heroHeader">
+      <div class="ls-header-top">
+        <div class="ls-brand">
+          <img src="assets/logo.png" alt="LandSafe Logo" style="width:34px;height:34px;border-radius:10px;object-fit:cover;box-shadow:0 2px 6px rgba(0,0,0,0.18);border:1px solid rgba(255,255,255,0.4)" />
+          <div>
+            <div class="ls-brand-text">LandSafe</div>
+            <div class="ls-brand-sub">IoT Early Warning System</div>
+          </div>
+        </div>
+
+        <div class="ls-header-actions">
+          <!-- Desktop Dashboard Link Button -->
+          <a href="index.html" class="ls-header-link-btn" title="Open Desktop GIS Dashboard">
+            <iconify-icon icon="material-symbols:monitor-rounded"></iconify-icon>
+            <span>Desktop</span>
+          </a>
+
+          <div class="ls-status-pill" id="rtdbPill">
+            <span class="ls-live-dot" id="liveDot"></span>
+            <span id="liveText">LIVE</span>
+          </div>
+
+          <button class="ls-icon-btn" onclick="switchPage('alerts')" title="Alerts & Hotlines">
+            <iconify-icon icon="material-symbols:notifications-rounded"></iconify-icon>
+            <span class="ls-unread-badge" id="topAlertBadge" style="display:none">0</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Location Bar in Hero -->
+      <div class="ls-location-bar">
+        <div class="ls-loc-info">
+          <iconify-icon icon="material-symbols:location-on-rounded" style="font-size:20px;color:#93C5FD"></iconify-icon>
+          <div>
+            <div class="ls-loc-text-main" id="currentStationText">Pole 2 — Upper Slope Catchment</div>
+            <div class="ls-loc-text-sub" id="coordsSubText">8.35922°N, 80.50394°E • Upper Catchment Node</div>
+          </div>
+        </div>
+        <button class="ls-btn-locate" onclick="triggerLocateUser()">
+          <iconify-icon icon="material-symbols:my-location-rounded"></iconify-icon>
+          <span>Locate</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Pages Container -->
+    <div class="page-container">
+
+      <!-- ═══════════════════════════════════════════════════════════════
+           HOME DASHBOARD
+           ═══════════════════════════════════════════════════════════════ -->
+      <div id="page-home" class="page active">
+        <!-- ═════════════════════════════════════════════════════════════
+             MONITORING STATION SELECTOR (TASK 2)
+             ═════════════════════════════════════════════════════════════ -->
+        <div class="ls-station-selector-card">
+          <div class="ls-station-selector-inner">
+            <div class="ls-station-sel-label">
+              <iconify-icon icon="material-symbols:podium-rounded" style="color:var(--ls-primary);font-size:20px"></iconify-icon>
+              <span>Monitoring Station:</span>
+            </div>
+            <select id="stationSelector" class="ls-station-dropdown" onchange="onStationSelectorChange(this.value)">
+              <option value="Pole-02" selected>Pole 2 — Fixed Monitoring Location (8.3592°N, 80.5039°E)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Weather Card -->
+        <div class="ls-weather-card">
+          <div class="ls-weather-main">
+            <div class="ls-temp-col">
+              <div class="ls-temp-val" id="valTemp">24.2°C</div>
+              <div class="ls-temp-meta">
+                <div class="ls-weather-desc" id="valWeatherDesc">Partly Cloudy</div>
+                <div class="ls-weather-sub" id="valWeatherSub">1-hour delayed telemetry</div>
+              </div>
+            </div>
+            <iconify-icon class="ls-weather-icon" id="weatherIcon" icon="material-symbols:partly-cloudy-day-rounded"></iconify-icon>
+          </div>
+
+          <div class="ls-weather-grid">
+            <div class="ls-weather-chip">
+              <span class="ls-weather-chip-label">Humidity</span>
+              <span class="ls-weather-chip-val" id="valHum">78%</span>
+            </div>
+            <div class="ls-weather-chip">
+              <span class="ls-weather-chip-label">Rain (1h)</span>
+              <span class="ls-weather-chip-val" id="valRain">0.0 mm</span>
+            </div>
+            <div class="ls-weather-chip">
+              <span class="ls-weather-chip-label">Rain (24h)</span>
+              <span class="ls-weather-chip-val" id="valRain24">12.5 mm</span>
+            </div>
+            <div class="ls-weather-chip">
+              <span class="ls-weather-chip-label">Wind</span>
+              <span class="ls-weather-chip-val" id="valWind">8 km/h</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═════════════════════════════════════════════════════════════
+             GRAPHICAL LANDSLIDE RISK SPEEDOMETER GAUGE
+             ═════════════════════════════════════════════════════════════ -->
+        <div class="ls-risk-card">
+          <div class="ls-card-head">
+            <div class="ls-card-title">
+              <iconify-icon icon="material-symbols:speed-rounded" style="color:var(--ls-primary)"></iconify-icon>
+              <span>Landslide Risk Gauge</span>
+            </div>
+            <span class="ls-card-tag" id="riskBadge" style="background:var(--ls-safe-soft);color:var(--ls-safe)">LOW RISK</span>
+          </div>
+
+          <!-- Clean Modern SVG Gauge (Center: 120, 115 • Radius: 85) -->
+          <div class="ls-gauge-container">
+            <svg class="ls-graphical-gauge" viewBox="0 0 240 135">
+              <!-- Background subtle track -->
+              <path d="M 35 115 A 85 85 0 0 1 205 115" fill="none" stroke="#F1F5F9" stroke-width="16" stroke-linecap="round" />
+
+              <!-- 5 Calibrated Color Segments: Very Low, Low, Moderate, High, Very High -->
+              <!-- 1. Very Low Risk (178° to 146°) Dark Green -->
+              <path d="M 35.1 112 A 85 85 0 0 1 49.5 67.5" fill="none" stroke="#16A34A" stroke-width="14" stroke-linecap="round" />
+              <!-- 2. Low Risk (142° to 110°) Light Green -->
+              <path d="M 53 62.7 A 85 85 0 0 1 90.9 35.1" fill="none" stroke="#84CC16" stroke-width="14" />
+              <!-- 3. Moderate Risk (106° to 74°) Yellow -->
+              <path d="M 96.6 33.3 A 85 85 0 0 1 143.4 33.3" fill="none" stroke="#EAB308" stroke-width="14" />
+              <!-- 4. High Risk (70° to 38°) Orange -->
+              <path d="M 149.1 35.1 A 85 85 0 0 1 187 62.7" fill="none" stroke="#F97316" stroke-width="14" />
+              <!-- 5. Very High Risk (34° to 2°) Red -->
+              <path d="M 190.5 67.5 A 85 85 0 0 1 204.9 112" fill="none" stroke="#EF4444" stroke-width="14" stroke-linecap="round" />
+
+              <!-- Five Region Labels -->
+              <text x="30" y="130" font-size="8" font-weight="700" fill="#16A34A" text-anchor="middle">V.LOW</text>
+              <text x="65" y="56" font-size="8" font-weight="700" fill="#84CC16" text-anchor="middle">LOW</text>
+              <text x="120" y="22" font-size="8" font-weight="700" fill="#EAB308" text-anchor="middle">MOD</text>
+              <text x="175" y="56" font-size="8" font-weight="700" fill="#F97316" text-anchor="middle">HIGH</text>
+              <text x="210" y="130" font-size="8" font-weight="700" fill="#EF4444" text-anchor="middle">V.HIGH</text>
+
+              <!-- Needle: Pointing straight up at (120, 36) on 0deg, pivot at (120, 115) -->
+              <g id="gaugeNeedle" style="transform-origin: 120px 115px; transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); transform: rotate(-72deg);">
+                <polygon points="117,115 120,36 123,115" fill="#0F172A" />
+                <circle cx="120" cy="115" r="10" fill="#0F172A" />
+                <circle cx="120" cy="115" r="4" fill="#FFFFFF" />
+              </g>
+            </svg>
+
+            <div class="ls-gauge-status">
+              <div class="ls-gauge-label" id="riskStatusLabel" style="color:#16A34A">Very Low Risk</div>
+              <div class="ls-gauge-desc" id="riskStatusDesc">Slope is stable. Soil moisture and incline are within safe thresholds.</div>
+            </div>
+          </div>
+
+          <!-- Compact Combined Risk Source Breakdown (LRI, Threshold, Combined) -->
+          <div class="ls-risk-sources-box" id="riskSourcesBox">
+            <div class="ls-source-item"><span class="ls-src-label">Station</span><strong id="valStationSource">Pole 2</strong></div>
+            <div class="ls-source-item"><span class="ls-src-label">LRI Risk</span><strong id="valLriSource">--</strong></div>
+            <div class="ls-source-item"><span class="ls-src-label">Threshold</span><strong id="valThresholdSource">--</strong></div>
+            <div class="ls-source-item"><span class="ls-src-label">Combined</span><strong id="valCombinedSource">--</strong></div>
+          </div>
+          <div class="ls-risk-meta-bar" style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;font-size:10.5px;color:var(--ls-text-muted);padding:0 4px">
+            <span>Governing: <strong id="valGovSource" style="color:var(--ls-text)">LRI Model (Pole 2)</strong></span>
+            <span>Updated: <strong id="valRiskUpdated" style="color:var(--ls-text)">--</strong></span>
+          </div>
+
+          <!-- Factor Breakdown Box -->
+          <div class="ls-factors-box" id="riskFactorsBox">
+            <strong>Evaluated Factors:</strong><br />
+            Soil Saturation: <span id="factorSoil">Moderate (40%)</span> • Incline: <span id="factorTilt">Stable (0.4°)</span> • Rain: <span id="factorRain">0.0 mm/h</span>
+          </div>
+        </div>
+
+        <!-- ═════════════════════════════════════════════════════════════
+             SOIL MOISTURE — GRAPHICAL ANIMATED GAUGE (DRY, MODERATE, WET)
+             (SM1, SM2, SM3 tiers removed; average percentage & animated gauge shown)
+             ═════════════════════════════════════════════════════════════ -->
+        <div class="ls-risk-card">
+          <div class="ls-card-head">
+            <div class="ls-card-title">
+              <iconify-icon icon="material-symbols:water-drop-rounded" style="color:#0284C7"></iconify-icon>
+              <span>Soil Moisture Gauge</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="ls-soil-cat-badge cat-moderate" id="soilAvgCategoryBadge">Moderate</span>
+              <span style="font-size:11px;font-weight:700;color:var(--ls-text-muted)" id="soilAvgBadge">(Avg: 40%)</span>
+            </div>
+          </div>
+
+          <!-- Modern SVG Soil Moisture Gauge (Center: 120, 115 • Radius: 85) -->
+          <div class="ls-gauge-container">
+            <svg class="ls-graphical-gauge" viewBox="0 0 240 135">
+              <!-- Background subtle track -->
+              <path d="M 35 115 A 85 85 0 0 1 205 115" fill="none" stroke="#F1F5F9" stroke-width="16" stroke-linecap="round" />
+
+              <!-- 3 Calibrated Color Segments: Dry (Amber: 0-30%), Moderate (Green: 30-60%), Wet (Blue: 60-100%) -->
+              <!-- Dry (Amber: 0% to 30% -> 178° to 127°) -->
+              <path d="M 35.1 115 A 85 85 0 0 1 69.5 47.0" fill="none" stroke="#F59E0B" stroke-width="14" stroke-linecap="round" />
+              <!-- Moderate (Green: 30% to 60% -> 123° to 73°) -->
+              <path d="M 73.8 44.5 A 85 85 0 0 1 145.0 33.8" fill="none" stroke="#10B981" stroke-width="14" />
+              <!-- Wet (Blue: 60% to 100% -> 69° to 2°) -->
+              <path d="M 149.3 35.5 A 85 85 0 0 1 204.9 115" fill="none" stroke="#2563EB" stroke-width="14" stroke-linecap="round" />
+
+              <!-- Zone Labels -->
+              <text x="45" y="100" font-size="9" font-weight="700" fill="#D97706" text-anchor="middle">DRY</text>
+              <text x="120" y="24" font-size="9" font-weight="700" fill="#059669" text-anchor="middle">MODERATE</text>
+              <text x="195" y="100" font-size="9" font-weight="700" fill="#2563EB" text-anchor="middle">WET</text>
+
+              <!-- Needle: Pointing straight up at (120, 36) on 0deg, pivot at (120, 115) -->
+              <g id="soilNeedle" style="transform-origin: 120px 115px; transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); transform: rotate(-18deg);">
+                <polygon points="117,115 120,36 123,115" fill="#0F172A" />
+                <circle cx="120" cy="115" r="10" fill="#0F172A" />
+                <circle cx="120" cy="115" r="4" fill="#FFFFFF" />
+              </g>
+            </svg>
+
+            <div class="ls-gauge-status">
+              <div class="ls-gauge-label" id="soilStatusLabel" style="color:#15803D">Moderate (40%)</div>
+              <div class="ls-gauge-desc" id="soilStatusDesc">Optimal soil retention. No deep saturation or liquefaction risk detected.</div>
+            </div>
+          </div>
+
+          <!-- Soil Moisture Info Box -->
+          <div class="ls-factors-box" style="margin-top:10px">
+            Average Soil Moisture: <strong id="soilAvgText">40%</strong> • Classification: <strong id="soilCatText">Moderate Moisture</strong>
+          </div>
+        </div>
+
+        <!-- ═════════════════════════════════════════════════════════════
+             GROUND MOVEMENT — TOP LEVEL & LOWER LEVEL ANGLES ONLY
+             (Physical / Simulation labels removed as requested)
+             ═════════════════════════════════════════════════════════════ -->
+        <div class="ls-section-card">
+          <div class="ls-card-head">
+            <div class="ls-card-title">
+              <iconify-icon icon="material-symbols:screen-rotation-rounded" style="color:#7C3AED"></iconify-icon>
+              <span>Ground Movement & Stability</span>
+            </div>
+            <span class="ls-card-tag" id="motionStatusBadge" style="background:var(--ls-safe-soft);color:var(--ls-safe)">STABLE</span>
+          </div>
+
+          <div class="ls-motion-grid">
+            <!-- Top Level Ground Incline -->
+            <div class="ls-motion-box">
+              <span class="ls-motion-badge" style="background:#F1F5F9;color:#334155;border:1px solid #CBD5E1">
+                Top Level
+              </span>
+              <div class="ls-motion-val" id="valSimTilt">1.2°</div>
+              <div class="ls-motion-label">Upper Slope Incline Tilt</div>
+              <div class="ls-motion-sub" id="subSimTilt" style="color:#16A34A;font-weight:700">Status: Steady</div>
+            </div>
+
+            <!-- Lower Level Ground Incline -->
+            <div class="ls-motion-box">
+              <span class="ls-motion-badge" style="background:#F1F5F9;color:#334155;border:1px solid #CBD5E1">
+                Lower Level
+              </span>
+              <div class="ls-motion-val" id="valRealTilt">0.4°</div>
+              <div class="ls-motion-label">Lower Toe Incline Tilt</div>
+              <div class="ls-motion-sub" id="subRealTilt" style="color:#16A34A;font-weight:700">Status: Stable</div>
+            </div>
+
+            <!-- Debris Barrier Catch Bed (Full-width spanning 2 columns) -->
+            <div class="ls-motion-box" style="grid-column: span 2;">
+              <span class="ls-motion-badge" style="background:var(--ls-primary-soft);color:var(--ls-primary)">
+                Catch Bed Load
+              </span>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:2px">
+                <div class="ls-motion-val" id="valWeight">0 g</div>
+                <div class="ls-motion-sub" id="valWeightStatus" style="color:#0284C7;font-weight:700;font-size:11px">Catch Bed Clear</div>
+              </div>
+              <div class="ls-motion-label">Debris Barrier Load & Impact Detection</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═════════════════════════════════════════════════════════════
+             MONITORING STATION (POLE 2)
+             ═════════════════════════════════════════════════════════════ -->
+        <div class="ls-alert-group-label" style="padding-left:14px;padding-top:12px;padding-bottom:8px">Monitoring Stations</div>
+
+        <!-- Pole 2 Card -->
+        <div class="ls-nearest-card" style="margin-bottom:14px">
+          <div class="ls-nearest-info">
+            <div class="ls-nearest-icon" style="background:#FFF7ED;color:#EA580C">
+              <iconify-icon icon="material-symbols:podium-rounded"></iconify-icon>
+            </div>
+            <div>
+              <div class="ls-nearest-title" id="pole2Title">Pole 2</div>
+              <div class="ls-nearest-sub" id="pole2Sub">Secondary Station • Lat: 8.359222° Lon: 80.503944° • Active</div>
+            </div>
+          </div>
+          <button class="ls-btn-view-pole" onclick="openPoleDetails('Pole-02')">
+            <span>Details</span>
+            <iconify-icon icon="material-symbols:chevron-right-rounded"></iconify-icon>
+          </button>
+        </div>
+
+        <div style="height:20px"></div>
+      </div><!-- /page-home -->
+
+      <!-- ═══════════════════════════════════════════════════════════════
+           MAP SCREEN
+           ═══════════════════════════════════════════════════════════════ -->
+      <div id="page-map" class="page">
+        <div class="ls-map-wrap">
+          <div id="poleMap"></div>
+
+          <!-- Floating Search Box -->
+          <div class="ls-map-floating-search">
+            <iconify-icon icon="material-symbols:search-rounded" style="font-size:20px;color:var(--ls-text-muted);margin-right:6px"></iconify-icon>
+            <input type="text" class="ls-map-search-input" id="mapSearchInput" placeholder="Search pole or coordinate…" oninput="filterMapPoles(this.value)" />
+          </div>
+
+          <!-- Locate Me Button -->
+          <button class="ls-btn-map-locate" onclick="triggerLocateUser()" title="Find My Location">
+            <iconify-icon icon="material-symbols:my-location-rounded"></iconify-icon>
+          </button>
+
+          <!-- Pole Slide-Up Preview Sheet -->
+          <div class="ls-pole-sheet" id="mapPoleSheet">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <div>
+                <div style="font-size:15px;font-weight:900;color:var(--ls-text)" id="sheetPoleName">Pole 01</div>
+                <div style="font-size:11px;color:var(--ls-text-muted)" id="sheetPoleMeta">Slope A • Upper Tier</div>
+              </div>
+              <button onclick="closeMapSheet()" style="background:var(--ls-surface-subtle);border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer">×</button>
+            </div>
+            <div class="ls-factors-box" style="margin-top:6px;margin-bottom:12px">
+              Soil Saturation: <strong id="sheetSoil">Moderate</strong> • Incline: <strong id="sheetTilt">0.4°</strong> • Risk: <strong id="sheetRisk">Safe</strong>
+            </div>
+            <button class="ls-btn-view-pole" style="width:100%;justify-content:center;padding:10px" onclick="openPoleDetails(activeSheetPoleId)">
+              <span>View Full Monitoring Details</span>
+              <iconify-icon icon="material-symbols:arrow-forward-rounded"></iconify-icon>
+            </button>
+          </div>
+        </div>
+      </div><!-- /page-map -->
+
+      <!-- ═══════════════════════════════════════════════════════════════
+           POLE DETAILS
+           ═══════════════════════════════════════════════════════════════ -->
+      <div id="page-pole-details" class="page">
+        <header class="ls-details-header">
+          <button class="ls-btn-back" onclick="switchPage('home')">
+            <iconify-icon icon="material-symbols:arrow-back-rounded"></iconify-icon>
+          </button>
+          <div class="ls-details-title">Monitoring Pole Details</div>
+          <button class="ls-btn-back" onclick="refreshPoleTelemetry()">
+            <iconify-icon icon="material-symbols:refresh-rounded"></iconify-icon>
+          </button>
+        </header>
+
+        <div class="ls-pole-hero">
+          <div class="ls-pole-hero-id" id="detailPoleId">Pole 01 — Slope Central</div>
+          <div class="ls-pole-hero-meta" id="detailPoleMeta">Sri Lanka Highlands • Lat: 8.359222° Lon: 80.503944°</div>
+        </div>
+
+        <!-- Gauge in Details -->
+        <div class="ls-risk-card" style="margin-top:14px">
+          <div class="ls-card-head">
+            <div class="ls-card-title">Pole Risk Evaluation</div>
+            <span class="ls-card-tag" id="detailRiskBadge" style="background:var(--ls-safe-soft);color:var(--ls-safe)">LOW RISK</span>
+          </div>
+          <div class="ls-gauge-container">
+            <svg class="ls-graphical-gauge" viewBox="0 0 240 135">
+              <!-- Background subtle track -->
+              <path d="M 35 115 A 85 85 0 0 1 205 115" fill="none" stroke="#F1F5F9" stroke-width="16" stroke-linecap="round" />
+
+              <!-- 5 Calibrated Color Segments: Very Low, Low, Moderate, High, Very High -->
+              <path d="M 35.1 112 A 85 85 0 0 1 49.5 67.5" fill="none" stroke="#16A34A" stroke-width="14" stroke-linecap="round" />
+              <path d="M 53 62.7 A 85 85 0 0 1 90.9 35.1" fill="none" stroke="#84CC16" stroke-width="14" />
+              <path d="M 96.6 33.3 A 85 85 0 0 1 143.4 33.3" fill="none" stroke="#EAB308" stroke-width="14" />
+              <path d="M 149.1 35.1 A 85 85 0 0 1 187 62.7" fill="none" stroke="#F97316" stroke-width="14" />
+              <path d="M 190.5 67.5 A 85 85 0 0 1 204.9 112" fill="none" stroke="#EF4444" stroke-width="14" stroke-linecap="round" />
+
+              <text x="30" y="130" font-size="8" font-weight="700" fill="#16A34A" text-anchor="middle">V.LOW</text>
+              <text x="65" y="56" font-size="8" font-weight="700" fill="#84CC16" text-anchor="middle">LOW</text>
+              <text x="120" y="22" font-size="8" font-weight="700" fill="#EAB308" text-anchor="middle">MOD</text>
+              <text x="175" y="56" font-size="8" font-weight="700" fill="#F97316" text-anchor="middle">HIGH</text>
+              <text x="210" y="130" font-size="8" font-weight="700" fill="#EF4444" text-anchor="middle">V.HIGH</text>
+
+              <g id="detailGaugeNeedle" style="transform-origin: 120px 115px; transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); transform: rotate(-72deg);">
+                <polygon points="117,115 120,36 123,115" fill="#0F172A" />
+                <circle cx="120" cy="115" r="10" fill="#0F172A" />
+                <circle cx="120" cy="115" r="4" fill="#FFFFFF" />
+              </g>
+            </svg>
+            <div class="ls-gauge-status">
+              <div class="ls-gauge-label" id="detailStatusLabel" style="color:#16A34A">Very Low Risk</div>
+              <div class="ls-gauge-desc" id="detailStatusDesc">All structural & soil telemetry within baseline stability limits.</div>
+            </div>
+          </div>
+
+          <!-- Compact Combined Risk Source Breakdown (LRI, Threshold, Combined) -->
+          <div class="ls-risk-sources-box" id="detailRiskSourcesBox">
+            <div class="ls-source-item"><span class="ls-src-label">Station</span><strong id="detailStationSource">Pole 2</strong></div>
+            <div class="ls-source-item"><span class="ls-src-label">LRI Risk</span><strong id="detailLriSource">--</strong></div>
+            <div class="ls-source-item"><span class="ls-src-label">Threshold</span><strong id="detailThresholdSource">--</strong></div>
+            <div class="ls-source-item"><span class="ls-src-label">Combined</span><strong id="detailCombinedSource">--</strong></div>
+          </div>
+          <div class="ls-risk-meta-bar" style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;font-size:10.5px;color:var(--ls-text-muted);padding:0 4px">
+            <span>Governing: <strong id="detailGovSource" style="color:var(--ls-text)">LRI Model</strong></span>
+            <span>Updated: <strong id="detailRiskUpdated" style="color:var(--ls-text)">--</strong></span>
+          </div>
+        </div>
+
+        <!-- Factor Table -->
+        <div class="ls-section-card">
+          <div class="ls-card-head">
+            <div class="ls-card-title">Live Sensor Readings</div>
+            <span style="font-size:10px;color:var(--ls-text-faint)" id="detailSyncTime">Just now</span>
+          </div>
+
+          <table class="ls-stats-table">
+            <tbody>
+              <tr>
+                <td class="ls-stat-name">Soil Moisture SM1 (Top Layer)</td>
+                <td class="ls-stat-val" id="detSM1">--</td>
+              </tr>
+              <tr>
+                <td class="ls-stat-name">Soil Moisture SM2 (Mid Layer)</td>
+                <td class="ls-stat-val" id="detSM2">--</td>
+              </tr>
+              <tr>
+                <td class="ls-stat-name">Soil Moisture SM3 (Toe Layer)</td>
+                <td class="ls-stat-val" id="detSM3">--</td>
+              </tr>
+              <tr>
+                <td class="ls-stat-name">ADXL345 Accelerometer (Toe)</td>
+                <td class="ls-stat-val" id="detAccel">X: --, Y: --, Z: -- m/s²</td>
+              </tr>
+              <tr>
+                <td class="ls-stat-name">Ground Incline Tilt Angle</td>
+                <td class="ls-stat-val" id="detTilt">0.4° (Stable)</td>
+              </tr>
+              <tr>
+                <td class="ls-stat-name">Debris Barrier Catch Bed</td>
+                <td class="ls-stat-val" id="detWeight">0 g (Clear)</td>
+              </tr>
+              <tr>
+                <td class="ls-stat-name">Rainfall (1-Hour Delayed)</td>
+                <td class="ls-stat-val" id="detRain1h">0.0 mm/h</td>
+              </tr>
+              <tr>
+                <td class="ls-stat-name">Rolling 24-Hour Rainfall</td>
+                <td class="ls-stat-val" id="detRain24h">0.0 mm</td>
+              </tr>
+              <tr>
+                <td class="ls-stat-name">Battery Level</td>
+                <td class="ls-stat-val" id="detBattery">82%</td>
+              </tr>
+              <tr>
+                <td class="ls-stat-name">GPS Location / Satellites</td>
+                <td class="ls-stat-val" id="detGps">8 Sats (Fix OK)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Historical Trend Chart (ECharts) -->
+        <div class="ls-section-card">
+          <div class="ls-card-head">
+            <div class="ls-card-title">Historical Telemetry Trends</div>
+            <span style="font-size:10.5px;font-weight:700;color:var(--ls-primary)">Live 24h</span>
+          </div>
+          <div id="poleHistoryChart" class="ls-chart-container"></div>
+        </div>
+
+        <!-- Sensor Node Fleet from index.html (8 Hardware Deployment Points) -->
+        <div class="ls-section-card">
+          <div class="ls-card-head">
+            <div class="ls-card-title">
+              <iconify-icon icon="material-symbols:memory-rounded" style="color:var(--ls-primary)"></iconify-icon>
+              <span>Deployed Sensor Node Fleet</span>
+            </div>
+            <span class="ls-card-tag" style="background:var(--ls-safe-soft);color:var(--ls-safe)">8 NODES ACTIVE</span>
+          </div>
+
+          <div id="sensorFleetList" style="display:flex;flex-direction:column;gap:8px">
+            <!-- Populated via renderSensorFleet -->
+          </div>
+        </div>
+
+        <div style="height:30px"></div>
+      </div><!-- /page-pole-details -->
+
+      <!-- ═══════════════════════════════════════════════════════════════
+           ALERTS & DIRECT EMERGENCY CALLING DIRECTORY
+           ═══════════════════════════════════════════════════════════════ -->
+      <div id="page-alerts" class="page">
+        <div class="ls-alerts-header">
+          <div class="ls-alerts-title">Notifications & Emergency Hotlines</div>
+        </div>
+
+        <!-- Category Filter Pills in Requested Order -->
+        <div class="ls-filter-bar">
+          <button class="ls-filter-pill active" onclick="filterAlerts('all', this)">All Notifications</button>
+          <button class="ls-filter-pill" onclick="filterAlerts('critical', this)">Critical Alerts</button>
+          <button class="ls-filter-pill" onclick="filterAlerts('regular', this)">Regular Alerts</button>
+          <button class="ls-filter-pill" onclick="filterAlerts('hotlines', this)">Emergency Hotlines</button>
+        </div>
+
+        <!-- 1. NOTIFICATIONS LIST (SHOWN FIRST) -->
+        <div id="alertsSection">
+          <div class="ls-alert-group-label" id="hazardAlertsHeader">Disaster & Sensor Notifications</div>
+          <div id="alertsContainer">
+            <!-- Rendered via JS -->
+          </div>
+
+          <div id="emptyAlertsView" style="display:none;text-align:center;padding:30px 20px;color:var(--ls-text-faint)">
+            <iconify-icon icon="material-symbols:notifications-off-rounded" style="font-size:40px;opacity:0.4;margin-bottom:6px"></iconify-icon>
+            <div style="font-size:14px;font-weight:700;color:var(--ls-text)">No Active Alerts</div>
+            <div style="font-size:11.5px;margin-top:4px">All sensor thresholds are within safe operational limits.</div>
+          </div>
+        </div>
+
+        <!-- 2. EMERGENCY DIRECT-DIAL CALLING DIRECTORY (ONLY SHOWN UNDER EMERGENCY HOTLINES TAB) -->
+        <div class="ls-hotline-section" id="hotlineDirectory" style="display:none;margin-top:10px">
+          <div class="ls-alert-group-label" style="padding-left:0;padding-bottom:10px">Emergency Direct-Dial Hotlines (Tap to Call)</div>
+
+          <!-- 117 DMC -->
+          <div class="ls-hotline-card">
+            <div class="ls-hotline-info">
+              <div class="ls-hotline-num">
+                <iconify-icon icon="material-symbols:call-rounded" style="color:#22C55E"></iconify-icon>
+                <span>117</span>
+              </div>
+              <div class="ls-hotline-name">Disaster Management Centre (DMC)</div>
+              <div class="ls-hotline-desc">Main landslide & disaster notifications, coordination & operations</div>
+            </div>
+            <a href="tel:117" class="ls-call-pill">
+              <iconify-icon icon="material-symbols:phone-forwarded-rounded"></iconify-icon>
+              <span>Call 117</span>
+            </a>
+          </div>
+
+          <!-- 119 Police -->
+          <div class="ls-hotline-card">
+            <div class="ls-hotline-info">
+              <div class="ls-hotline-num">
+                <iconify-icon icon="material-symbols:call-rounded" style="color:#22C55E"></iconify-icon>
+                <span>119</span>
+              </div>
+              <div class="ls-hotline-name">Police Emergency Services</div>
+              <div class="ls-hotline-desc">Sri Lanka Police emergency rescue and rapid response</div>
+            </div>
+            <a href="tel:119" class="ls-call-pill">
+              <iconify-icon icon="material-symbols:phone-forwarded-rounded"></iconify-icon>
+              <span>Call 119</span>
+            </a>
+          </div>
+
+          <!-- 1990 Ambulance -->
+          <div class="ls-hotline-card">
+            <div class="ls-hotline-info">
+              <div class="ls-hotline-num">
+                <iconify-icon icon="material-symbols:call-rounded" style="color:#22C55E"></iconify-icon>
+                <span>1990</span>
+              </div>
+              <div class="ls-hotline-name">Suwa Seriya Free Ambulance Service</div>
+              <div class="ls-hotline-desc">Pre-hospital emergency medical service and ambulance dispatch</div>
+            </div>
+            <a href="tel:1990" class="ls-call-pill">
+              <iconify-icon icon="material-symbols:phone-forwarded-rounded"></iconify-icon>
+              <span>Call 1990</span>
+            </a>
+          </div>
+
+          <!-- NBRO -->
+          <div class="ls-hotline-card">
+            <div class="ls-hotline-info">
+              <div class="ls-hotline-num">
+                <iconify-icon icon="material-symbols:call-rounded" style="color:#22C55E"></iconify-icon>
+                <span>011 258 8946</span>
+              </div>
+              <div class="ls-hotline-name">National Building Research Organisation (NBRO)</div>
+              <div class="ls-hotline-desc">Landslide risk assessments, early warnings & technical advisories</div>
+            </div>
+            <a href="tel:0112588946" class="ls-call-pill">
+              <iconify-icon icon="material-symbols:phone-forwarded-rounded"></iconify-icon>
+              <span>Call NBRO</span>
+            </a>
+          </div>
+
+          <!-- 110 Fire -->
+          <div class="ls-hotline-card">
+            <div class="ls-hotline-info">
+              <div class="ls-hotline-num">
+                <iconify-icon icon="material-symbols:call-rounded" style="color:#22C55E"></iconify-icon>
+                <span>110</span>
+              </div>
+              <div class="ls-hotline-name">Fire & Rescue Services</div>
+              <div class="ls-hotline-desc">Municipal fire brigades and structural disaster rescue</div>
+            </div>
+            <a href="tel:110" class="ls-call-pill">
+              <iconify-icon icon="material-symbols:phone-forwarded-rounded"></iconify-icon>
+              <span>Call 110</span>
+            </a>
+          </div>
+
+          <div class="ls-alert-group-label" style="padding-left:0;padding-top:10px;padding-bottom:10px">Specialized Rescue & Military Units</div>
+
+          <!-- 113 Army -->
+          <div class="ls-hotline-card">
+            <div class="ls-hotline-info">
+              <div class="ls-hotline-num">
+                <iconify-icon icon="material-symbols:call-rounded" style="color:#22C55E"></iconify-icon>
+                <span>113</span>
+              </div>
+              <div class="ls-hotline-name">Sri Lanka Army Disaster Relief</div>
+              <div class="ls-hotline-desc">Ground search, rescue and disaster relief field operations</div>
+            </div>
+            <a href="tel:113" class="ls-call-pill">
+              <iconify-icon icon="material-symbols:phone-forwarded-rounded"></iconify-icon>
+              <span>Call 113</span>
+            </a>
+          </div>
+
+          <!-- 116 Air Force -->
+          <div class="ls-hotline-card">
+            <div class="ls-hotline-info">
+              <div class="ls-hotline-num">
+                <iconify-icon icon="material-symbols:call-rounded" style="color:#22C55E"></iconify-icon>
+                <span>116</span>
+              </div>
+              <div class="ls-hotline-name">Sri Lanka Air Force (SLAF)</div>
+              <div class="ls-hotline-desc">Helicopter air rescue, aerial reconnaissance and flood evacuation</div>
+            </div>
+            <a href="tel:116" class="ls-call-pill">
+              <iconify-icon icon="material-symbols:phone-forwarded-rounded"></iconify-icon>
+              <span>Call 116</span>
+            </a>
+          </div>
+
+          <!-- Navy -->
+          <div class="ls-hotline-card">
+            <div class="ls-hotline-info">
+              <div class="ls-hotline-num">
+                <iconify-icon icon="material-symbols:call-rounded" style="color:#22C55E"></iconify-icon>
+                <span>011 244 5368</span>
+              </div>
+              <div class="ls-hotline-name">Sri Lanka Navy Rescue Operations</div>
+              <div class="ls-hotline-desc">Water-related rescue, flood relief and boat transport units</div>
+            </div>
+            <a href="tel:0112445368" class="ls-call-pill">
+              <iconify-icon icon="material-symbols:phone-forwarded-rounded"></iconify-icon>
+              <span>Call Navy</span>
+            </a>
+          </div>
+
+          <!-- Meteorology -->
+          <div class="ls-hotline-card">
+            <div class="ls-hotline-info">
+              <div class="ls-hotline-num">
+                <iconify-icon icon="material-symbols:call-rounded" style="color:#22C55E"></iconify-icon>
+                <span>011 268 6686</span>
+              </div>
+              <div class="ls-hotline-name">Department of Meteorology</div>
+              <div class="ls-hotline-desc">Live weather forecasts, torrential monsoon alerts & rainfall advisories</div>
+            </div>
+            <a href="tel:0112686686" class="ls-call-pill">
+              <iconify-icon icon="material-symbols:phone-forwarded-rounded"></iconify-icon>
+              <span>Call Met</span>
+            </a>
+          </div>
+        </div>
+
+        <div style="height:20px"></div>
+      </div><!-- /page-alerts -->
+
+      <!-- ═══════════════════════════════════════════════════════════════
+           SETTINGS SCREEN
+           ═══════════════════════════════════════════════════════════════ -->
+      <div id="page-settings" class="page">
+        <div class="ls-alerts-header">
+          <div class="ls-alerts-title">Settings & Diagnostics</div>
+        </div>
+
+        <div class="ls-alert-group-label">Notification Preferences</div>
+        <div class="ls-settings-group">
+          <div class="ls-settings-item">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--ls-text)">Push Notifications</div>
+              <div style="font-size:11px;color:var(--ls-text-muted)">Receive background disaster alerts</div>
+            </div>
+            <label class="ls-switch">
+              <input type="checkbox" id="prefPush" checked onchange="togglePushPreference(this.checked)" />
+              <span class="ls-slider"></span>
+            </label>
+          </div>
+
+          <div class="ls-settings-item">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--ls-text)">Sound & Siren</div>
+              <div style="font-size:11px;color:var(--ls-text-muted)">Audible alarm for critical hazard warnings</div>
+            </div>
+            <label class="ls-switch">
+              <input type="checkbox" id="prefSound" checked />
+              <span class="ls-slider"></span>
+            </label>
+          </div>
+
+          <div class="ls-settings-item">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--ls-text)">Vibration</div>
+              <div style="font-size:11px;color:var(--ls-text-muted)">Haptic alert on mobile device</div>
+            </div>
+            <label class="ls-switch">
+              <input type="checkbox" id="prefVibrate" checked />
+              <span class="ls-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="ls-alert-group-label">Location & System Access</div>
+        <div class="ls-settings-group">
+          <div class="ls-settings-item">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--ls-text)">GPS Location Permission</div>
+              <div style="font-size:11px;color:var(--ls-text-muted)" id="locPermStatusText">Precise Android location</div>
+            </div>
+            <button class="ls-btn-view-pole" onclick="triggerLocateUser()">Test GPS</button>
+          </div>
+
+          <div class="ls-settings-item">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--ls-text)">Android App Settings</div>
+              <div style="font-size:11px;color:var(--ls-text-muted)">Manage system notification channels</div>
+            </div>
+            <button class="ls-btn-view-pole" onclick="LandSafeNative.openSettings()">Open Settings</button>
+          </div>
+        </div>
+
+        <div class="ls-alert-group-label">System Architecture</div>
+        <div class="ls-settings-group">
+          <div class="ls-settings-item">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--ls-text)">Desktop GIS Dashboard</div>
+              <div style="font-size:11px;color:var(--ls-text-muted)">Open full 10-page research station interface</div>
+            </div>
+            <a href="index.html" class="ls-btn-view-pole" style="text-decoration:none">Open Web View ↗</a>
+          </div>
+
+          <div class="ls-settings-item">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--ls-text)">Realtime Database</div>
+              <div style="font-size:11px;color:var(--ls-text-muted)" id="settingsDbStatus">Connected to asia-southeast1</div>
+            </div>
+            <span class="ls-card-tag" style="background:var(--ls-safe-soft);color:var(--ls-safe)">ONLINE</span>
+          </div>
+
+          <div class="ls-settings-item">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--ls-text)">Research Station</div>
+              <div style="font-size:11px;color:var(--ls-text-muted)">Sri Lanka Highlands • Rajarata Univ.</div>
+            </div>
+            <span style="font-size:11px;font-weight:700;color:var(--ls-text-muted)">7.445°N 80.591°E</span>
+          </div>
+
+          <div class="ls-settings-item">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--ls-text)">App Version</div>
+              <div style="font-size:11px;color:var(--ls-text-muted)">Production Release Artifact</div>
+            </div>
+            <span style="font-size:11px;font-weight:700;color:var(--ls-primary)">v1.1.0 (Build 3)</span>
+          </div>
+        </div>
+
+        <div style="padding:0 14px;margin-top:10px">
+          <button class="ls-btn-view-pole" style="width:100%;justify-content:center;background:#FEE2E2;color:#DC2626;border-color:#FCA5A5;padding:12px" onclick="clearCachedData()">
+            Clear Offline Cache & Reconnect
+          </button>
+        </div>
+
+        <div style="height:30px"></div>
+      </div><!-- /page-settings -->
+
+    </div><!-- /page-container -->
+
+    <!-- ═════════════════════════════════════════════════════════════════
+         BOTTOM NAVIGATION BAR
+         ═════════════════════════════════════════════════════════════════ -->
+    <nav class="ls-bottom-bar">
+      <button class="ls-nav-btn active" id="nav-home" onclick="switchPage('home')">
+        <iconify-icon icon="material-symbols:home-rounded"></iconify-icon>
+        <span>Home</span>
+      </button>
+
+      <button class="ls-nav-btn" id="nav-map" onclick="switchPage('map')">
+        <iconify-icon icon="material-symbols:map-rounded"></iconify-icon>
+        <span>Map</span>
+      </button>
+
+      <button class="ls-nav-btn" id="nav-alerts" onclick="switchPage('alerts')">
+        <iconify-icon icon="material-symbols:notifications-rounded"></iconify-icon>
+        <span>Alerts</span>
+        <span class="ls-nav-badge" id="navAlertBadge" style="display:none">0</span>
+      </button>
+
+      <button class="ls-nav-btn" id="nav-settings" onclick="switchPage('settings')">
+        <iconify-icon icon="material-symbols:settings-rounded"></iconify-icon>
+        <span>Settings</span>
+      </button>
+    </nav>
+
+    <!-- Toast Notification Box -->
+    <div class="ls-toast-box" id="toastBox">Notification Message</div>
+
+  </div><!-- /app -->
+
+  <!-- Application Logic -->
+  <script src="firebase-config.js"></script>
+  <script src="js/app-native.js"></script>
+  <script>
+  /* ═════════════════════════════════════════════════════════════════════
+     LANDSAFE MOBILE TELEMETRY & VIEW CONTROLLER
+     Authoritative Dual-Station Mobile Dashboard (Pole 2 & Pole 2)
+     5-Level Calibrated Landslide Risk System
+     ═════════════════════════════════════════════════════════════════════ */
+  'use strict';
+
+  // ══════════════════════ CONSTANTS & CONFIGURATION ══════════════════════
+  const DEFAULT_LAT = 8.359222;
+  const DEFAULT_LON = 80.503944;
+  const SENSOR_ONLINE_THRESHOLD_MS = 180 * 1000; // 3 minutes
+  const SENSOR_OFFLINE_TIMEOUT_MS  = 600 * 1000; // 10 minutes
+  const STALE_THRESHOLD_MS = 180 * 1000; // 3 minutes
+
+  function getHardwareConnectionStatus(lastPacketAt) {
+    if (!lastPacketAt || lastPacketAt <= 0) {
+      return { status: 'Unknown', label: 'Unknown', tagClass: 'tag-secondary', color: '#94A3B8', isOnline: false, isDelayed: false };
+    }
+    const now = Date.now();
+    const ageMs = now - lastPacketAt;
+    if (ageMs <= SENSOR_ONLINE_THRESHOLD_MS) {
+      return { status: 'Online', label: 'Online', tagClass: 'tag-safe', color: '#16A34A', isOnline: true, isDelayed: false };
+    } else if (ageMs <= SENSOR_OFFLINE_TIMEOUT_MS) {
+      return { status: 'Delayed', label: 'Delayed / Last Known', tagClass: 'tag-warning', color: '#EAB308', isOnline: false, isDelayed: true };
+    } else {
+      return { status: 'Offline', label: 'Offline', tagClass: 'tag-danger', color: '#EF4444', isOnline: false, isDelayed: false };
+    }
+  }
+
+  const POLE_LOCATIONS = Object.freeze({
+    
+    pole2: {
+      id: 'Pole-02',
+      name: 'Pole 2',
+      sub: 'Secondary Station',
+      lat: 8.359222,
+      lon: 80.503944,
+      color: '#EA580C', // Orange
+      dms: '8°21\'33.2"N 80°30\'14.2"E'
+    }
+  });
+
+  const POLE2_BASELINE = Object.freeze({
+    soil1: 42,
+    soil2: 36,
+    soil3: null, // Unavailable on Pole 2 (only 2 sensors)
+    ax: 1.5700,
+    ay: 1.9600,
+    az: 2.4200,
+    weight: 0,
+    battery: 82,
+    lat: 8.359222,
+    lon: 80.503944,
+    sats: 0,
+    isBaseline: true
+  });
+
+  // Physical Baseline Constants (Das et al. & LGMI Inclinometer Model)
+  // Pole 2 Inclinometer baseline angles: Sensor 1 (2m Toe Depth) = 53.1834°, Sensor 2 (1m Upper Catchment) = 53.1712°
+  const LGMI_INITIAL_ANGLES = { 1: 53.1834, 2: 53.1712, pole2: 46.0590 };
+  // Pole 2 fixed deployment baseline tilt angle (calibrated for fixed ax: 1.57, ay: 1.96, az: 2.42 -> 46.0590°)
+  const POLE2_INITIAL_ANGLE = 46.0590;
+  let TOP_ADXL_SIM = { ax: 2.1304, ay: 2.2973, az: 2.3463 };
+
+  const REF_WEIGHT = 4.0;
+  const SCALE_WEIGHT = 168.0;
+  const REF_ACCEL = { x: 1.04, y: 0.68, z: 9.73 };
+  const SCALE_ACCEL_DEV = 2.747398769745666;
+  const SCALE_RAIN = 38.0;
+
+  // ══════════════════════ FIVE RISK CATEGORIES ══════════════════════
+  const RISK_CATEGORIES = Object.freeze({
+    'Very Low Risk': {
+      classId: 0,
+      label: 'Very Low Risk',
+      color: '#16A34A',
+      badgeBg: '#DCFCE7',
+      badgeBorder: '#86EFAC',
+      needleAngle: -72, // Center of 180°-144° arc segment
+      desc: 'Slope is well within baseline stability. All sensor departures near zero.'
+    },
+    'Low Risk': {
+      classId: 1,
+      label: 'Low Risk',
+      color: '#84CC16',
+      badgeBg: '#ECFCCB',
+      badgeBorder: '#BEF264',
+      needleAngle: -36, // Center of 144°-108° arc segment
+      desc: 'Minor sensor variation observed. Normal monitoring vigilance recommended.'
+    },
+    'Moderate Risk': {
+      classId: 2,
+      label: 'Moderate Risk',
+      color: '#EAB308',
+      badgeBg: '#FEF3C7',
+      badgeBorder: '#FDE047',
+      needleAngle: 0, // Center of 108°-72° arc segment
+      desc: 'Elevated weighted departure in load, acceleration, or saturation. Active watch.'
+    },
+    'High Risk': {
+      classId: 3,
+      label: 'High Risk',
+      color: '#F97316',
+      badgeBg: '#FFEDD5',
+      badgeBorder: '#FDBA74',
+      needleAngle: 36, // Center of 72°-36° arc segment
+      desc: 'Hazardous slope departure detected across multiple weighted parameters. Warning advisory.'
+    },
+    'Very High Risk': {
+      classId: 4,
+      label: 'Very High Risk',
+      color: '#EF4444',
+      badgeBg: '#FEE2E2',
+      badgeBorder: '#FCA5A5',
+      needleAngle: 72, // Center of 36°-0° arc segment
+      desc: 'Severe multi-sensor anomaly exceeding critical 95th percentile limits. Immediate evacuation advisory.'
+    },
+    'Risk Unavailable': {
+      classId: -1,
+      label: 'Risk Unavailable',
+      color: '#94A3B8',
+      badgeBg: '#F1F5F9',
+      badgeBorder: '#CBD5E1',
+      needleAngle: -90,
+      desc: 'Sensor telemetry stale or offline. Waiting for valid sensor packets.'
+    }
+  });
+
+  // ══════════════════════ APPLICATION STATE ══════════════════════
+  let selectedStation = 'Pole-02'; // 'AUTO' | 'Pole-02' | 'Pole-02'
+  let isManualSelection = false;
+  let activeDetailPoleId = 'Pole-02';
+
+  function getNearestPoleInfo() {
+    const hasGps = Boolean(userGeoLocation && Number.isFinite(userGeoLocation.lat) && Number.isFinite(userGeoLocation.lon));
+    if (!hasGps) {
+      return {
+        hasGps: false,
+        nearestPoleId: 'Pole-02',
+        d1: null,
+        d2: null,
+        statusText: 'GPS Unavailable — Manual Station Selection Active'
+      };
+    }
+    const d1 = LandSafeNative.haversineKm(userGeoLocation.lat, userGeoLocation.lon, POLE_LOCATIONS.pole2.lat, POLE_LOCATIONS.pole2.lon);
+    const d2 = LandSafeNative.haversineKm(userGeoLocation.lat, userGeoLocation.lon, POLE_LOCATIONS.pole2.lat, POLE_LOCATIONS.pole2.lon);
+    const nearestPoleId = (d2 < d1) ? 'Pole-02' : 'Pole-02';
+    return {
+      hasGps: true,
+      nearestPoleId,
+      d1,
+      d2,
+      statusText: `Nearest: ${nearestPoleId === 'Pole-02' ? 'Pole 2' : 'Pole 2'} (${(nearestPoleId === 'Pole-02' ? d2 : d1).toFixed(2)} km)`
+    };
+  }
+
+  function getActiveStationId() {
+    if (isManualSelection && (selectedStation === 'Pole-02' || selectedStation === 'Pole-02')) {
+      return selectedStation;
+    }
+    const nearest = getNearestPoleInfo();
+    return nearest.nearestPoleId;
+  }
+
+  function updateLocationBarText() {
+    const main = $id('currentStationText');
+    const sub = $id('coordsSubText');
+    const activeId = getActiveStationId();
+    const nearestInfo = getNearestPoleInfo();
+
+    if (isManualSelection) {
+      if (activeId === 'Pole-02') {
+        if (main) main.textContent = 'Pole 2 — Central Slope';
+        if (sub) sub.textContent = `${POLE_LOCATIONS.pole2.lat.toFixed(5)}°N, ${POLE_LOCATIONS.pole2.lon.toFixed(5)}°E • Pole 2 (Manual Selection)`;
+      } else {
+        if (main) main.textContent = 'Pole 2 — Secondary Station';
+        if (sub) sub.textContent = `${POLE_LOCATIONS.pole2.lat.toFixed(6)}°N, ${POLE_LOCATIONS.pole2.lon.toFixed(6)}°E • Pole 2 (Manual Selection)`;
+      }
+    } else {
+      if (nearestInfo.hasGps) {
+        if (main) main.textContent = `Auto: ${activeId === 'Pole-02' ? 'Pole 2' : 'Pole 2'} (Nearest)`;
+        if (sub) sub.textContent = `GPS Fixed • ${nearestInfo.statusText} • Governing: ${activeId === 'Pole-02' ? 'Pole 2' : 'Pole 2'}`;
+      } else {
+        if (main) main.textContent = 'Sri Lanka Central Highlands';
+        if (sub) sub.textContent = 'GPS Unavailable • Auto-Selection Active (Pole 2 Governing)';
+      }
+    }
+  }
+
+  let currentPole2Reading = null;
+  let currentSensorReading = null;
+  let currentWeatherReading = null;
+
+  let currentLriResults = null;
+  let currentMlResults = null;
+  let currentThresholdResults = null;
+
+  let pole2LastPacketAt = 0;
+  let isFirebaseConnected = false;
+
+  let recentSensorRecords = [];
+  let rawManualAlerts = [];
+  let rawAutomatedAlerts = [];
+  let localDynamicAlerts = [];
+  let activePoles = [];
+  let userGeoLocation = null;
+
+  let leafletMapInstance = null;
+  let mapPolesLayer = null;
+  let userMapMarker = null;
+  let activeSheetPoleId = 'Pole-02';
+  let historyEChart = null;
+
+  function $id(id) { return document.getElementById(id); }
+  function showToast(msg) {
+    const box = $id('toastBox');
+    if (!box) return;
+    box.textContent = msg;
+    box.classList.add('show');
+    setTimeout(() => box.classList.remove('show'), 3000);
+  }
+  window.showToast = showToast;
+
+  /* ═════════════════════════════════════════════════════════════════════
+     NAVIGATION CONTROLLER
+     ═════════════════════════════════════════════════════════════════════ */
+  function switchPage(pageName) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.ls-nav-btn').forEach(b => b.classList.remove('active'));
+
+    const targetPage = $id('page-' + pageName);
+    if (targetPage) targetPage.classList.add('active');
+
+    const navBtn = $id('nav-' + pageName);
+    if (navBtn) navBtn.classList.add('active');
+
+    const hero = $id('heroHeader');
+    if (hero) {
+      hero.style.display = (pageName === 'pole-details' || pageName === 'map') ? 'none' : 'block';
+    }
+
+    if (pageName === 'map') {
+      setTimeout(() => initOrUpdateMap(), 150);
+    }
+    if (pageName === 'pole-details') {
+      setTimeout(() => {
+        renderPoleDetailsUI();
+        initPoleHistoryChart();
+        if (historyEChart) historyEChart.resize();
+      }, 200);
+    }
+    if (pageName === 'alerts') {
+      updateAlertsUI();
+    }
+    if (pageName === 'home') {
+      updateTelemetryUI();
+    }
+  }
+  window.switchPage = switchPage;
+
+  /* ═════════════════════════════════════════════════════════════════════
+     STATION SELECTION (NEAREST AUTO & MANUAL LOCK)
+     ═════════════════════════════════════════════════════════════════════ */
+  function onStationSelectorChange(stationId) {
+    if (stationId === 'AUTO' || stationId === 'ALL') {
+      selectedStation = 'AUTO';
+      isManualSelection = false;
+    } else {
+      selectedStation = stationId;
+      isManualSelection = true;
+    }
+    const sel = $id('stationSelector');
+    if (sel && sel.value !== stationId) {
+      sel.value = stationId;
+    }
+
+    updateLocationBarText();
+    updateTelemetryUI();
+
+    const activeId = getActiveStationId();
+    if (leafletMapInstance) {
+      if (activeId === 'Pole-02') {
+        leafletMapInstance.flyTo([POLE_LOCATIONS.pole2.lat, POLE_LOCATIONS.pole2.lon], 15);
+      } else if (activeId === 'Pole-02') {
+        leafletMapInstance.flyTo([POLE_LOCATIONS.pole2.lat, POLE_LOCATIONS.pole2.lon], 15);
+      }
+    }
+
+    if ($id('page-pole-details') && $id('page-pole-details').classList.contains('active')) {
+      renderPoleDetailsUI();
+    }
+  }
+  window.onStationSelectorChange = onStationSelectorChange;
+
+  /* ═════════════════════════════════════════════════════════════════════
+     HARDWARE DEPLOYMENT FLEET
+     ═════════════════════════════════════════════════════════════════════ */
+  const SENSOR_FLEET = [
+    { id: 'SEN-SM1', name: 'Soil Moisture SM1 (Depth 100 cm)', tier: 'Slope A — Top Tier (100 cm)', type: 'Capacitive Moisture', lat: 7.4472, lon: 80.5915 },
+    { id: 'SEN-SM2', name: 'Soil Moisture SM2 (Depth 150 cm)', tier: 'Slope A — Mid Incline (150 cm)', type: 'Capacitive Moisture', lat: 7.4454, lon: 80.5913 },
+    { id: 'SEN-SM3', name: 'Soil Moisture SM3 (Depth 200 cm)', tier: 'Slope B — Lower Toe (200 cm)', type: 'Capacitive Moisture', lat: 7.4436, lon: 80.5910 },
+    { id: 'SEN-ACC2', name: 'ADXL345 Motion (Top Crest)', tier: 'Slope A — Upper Crest', type: 'Accelerometer (Top Hardware)', lat: 7.4478, lon: 80.5922 },
+    { id: 'SEN-ACC1', name: 'ADXL345 Motion (Lower Toe)', tier: 'Slope B — Lower Toe', type: 'Accelerometer (Lower Hardware)', lat: 7.4438, lon: 80.5908 },
+    { id: 'SEN-W01', name: 'Load Cell Weight Sensor', tier: 'Slope B — Catch Bed Barrier', type: 'Debris Strain Gauge', lat: 7.4432, lon: 80.5912 },
+    { id: 'SEN-GPS1', name: 'NEO-6M GPS Satellite Tracker', tier: 'Central Telemetry Mast', type: 'Highlands Positioning Fix', lat: 8.359222, lon: 80.503944 },
+    { id: 'SEN-SIM1', name: 'SIM800L Telemetry Module', tier: 'Central Telemetry Mast', type: 'Cellular 2G GPRS Bridge', lat: 7.44540, lon: 80.59140 }
+  ];
+
+  /* ═════════════════════════════════════════════════════════════════════
+     FIELD EXTRACTION UTILITIES
+     ═════════════════════════════════════════════════════════════════════ */
+  function getField(d, ...names) {
+    if (!d || typeof d !== 'object') return 0;
+    for (const n of names) {
+      if (d[n] !== undefined && d[n] !== null && d[n] !== '') return d[n];
+    }
+    return 0;
+  }
+
+  function pickNumeric(d, names) {
+    if (!d || typeof d !== 'object') return null;
+    for (const n of names) {
+      const raw = d[n];
+      if (raw === undefined || raw === null || raw === '') continue;
+      const num = Number(raw);
+      if (Number.isFinite(num)) return num;
+    }
+    return null;
+  }
+
+  function packetTimeMs(key, d) {
+    const raw = d && (d._ts || d.timestamp || d.time || d.createdAt || d.ts);
+    if (typeof raw === 'number') return raw < 1e11 ? raw * 1000 : raw;
+    if (typeof raw === 'string') {
+      const n = Number(raw);
+      if (Number.isFinite(n) && n > 1e9) return n < 1e11 ? n * 1000 : n;
+      const parsed = Date.parse(raw);
+      if (Number.isFinite(parsed)) return parsed;
+    }
+    if (typeof key === 'string' && key.length >= 8) {
+      try {
+        const PUSH_CHARS = '-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz';
+        let ms = 0;
+        for (let i = 0; i < 8; i++) {
+          const c = PUSH_CHARS.indexOf(key[i]);
+          if (c === -1) { ms = 0; break; }
+          ms = ms * 64 + c;
+        }
+        if (ms > 1577836800000 && ms < 2524608000000) return ms;
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  function extractAdxl1(d) {
+    if (!d || typeof d !== 'object') return null;
+    const nested = d.adxl1 || d.ADXL1 || d.accel1 || d.ACCEL1;
+    const fields = nested && typeof nested === 'object' ? nested : d;
+    const ax = pickNumeric(fields, nested ? ['x','ax','accel_x','accelX','X'] : ['accelX','accel_x','AccelX','ax','x']);
+    const ay = pickNumeric(fields, nested ? ['y','ay','accel_y','accelY','Y'] : ['accelY','accel_y','AccelY','ay','y']);
+    const az = pickNumeric(fields, nested ? ['z','az','accel_z','accelZ','Z'] : ['accelZ','accel_z','AccelZ','az','z']);
+    if (ax === null || ay === null || az === null) return null;
+    return { ax, ay, az };
+  }
+
+  function extractAdxl2(d) {
+    if (!d || typeof d !== 'object') return null;
+    const nested = d.adxl2 || d.ADXL2 || d.accel2 || d.ACCEL2;
+    if (nested && typeof nested === 'object') {
+      const ax = pickNumeric(nested, ['x', 'ax', 'accel_x', 'X']);
+      const ay = pickNumeric(nested, ['y', 'ay', 'accel_y', 'Y']);
+      const az = pickNumeric(nested, ['z', 'az', 'accel_z', 'Z']);
+      if (ax !== null && ay !== null && az !== null) return { ax, ay, az };
+    }
+    const ax = pickNumeric(d, ['accel2_x', 'accelX2', 'adxl2_x', 'ax2', 'x2']);
+    const ay = pickNumeric(d, ['accel2_y', 'accelY2', 'adxl2_y', 'ay2', 'y2']);
+    const az = pickNumeric(d, ['accel2_z', 'accelZ2', 'adxl2_z', 'az2', 'z2']);
+    if (ax !== null && ay !== null && az !== null) return { ax, ay, az };
+    return null;
+  }
+
+  function readAdxl2(d) {
+    const real = extractAdxl2(d);
+    if (real) return real;
+    const nested = d?.accel2 || d?.ADXL2;
+    let ax = null, ay = null, az = null;
+    if (nested && typeof nested === 'object') {
+      ax = pickNumeric(nested, ['x', 'ax', 'accel_x', 'X']);
+      ay = pickNumeric(nested, ['y', 'ay', 'accel_y', 'Y']);
+      az = pickNumeric(nested, ['z', 'az', 'accel_z', 'Z']);
+    }
+    if (ax === null) ax = pickNumeric(d, ['accel2_x', 'accelX2', 'adxl2_x', 'ax2', 'x2', 'fake_accel_x', 'bx']);
+    if (ay === null) ay = pickNumeric(d, ['accel2_y', 'accelY2', 'adxl2_y', 'ay2', 'y2', 'fake_accel_y', 'by']);
+    if (az === null) az = pickNumeric(d, ['accel2_z', 'accelZ2', 'adxl2_z', 'az2', 'z2', 'fake_accel_z', 'bz']);
+    if (ax !== null && ay !== null && az !== null) {
+      return { ax, ay, az };
+    }
+    return { ax: TOP_ADXL_SIM.ax, ay: TOP_ADXL_SIM.ay, az: TOP_ADXL_SIM.az };
+  }
+
+  function computeSensorMotion(d) {
+    const adxl1 = extractAdxl1(d) || { ax: 1.9613, ay: 2.0398, az: 2.1182 };
+    const ax = parseFloat(adxl1.ax) || 0;
+    const ay = parseFloat(adxl1.ay) || 0;
+    const az = parseFloat(adxl1.az) || 0;
+    const mag1 = Math.sqrt(ax * ax + ay * ay + az * az);
+    const theta1 = Math.atan2(Math.hypot(ax, ay), Math.abs(az)) * 180 / Math.PI;
+    const delta1 = Math.abs(theta1 - LGMI_INITIAL_ANGLES[1]);
+
+    const adxl2 = readAdxl2(d) || TOP_ADXL_SIM;
+    const bx = parseFloat(adxl2.ax) || 0;
+    const by = parseFloat(adxl2.ay) || 0;
+    const bz = parseFloat(adxl2.az) || 0;
+    const mag2 = Math.sqrt(bx * bx + by * by + bz * bz);
+    const theta2 = Math.atan2(Math.hypot(bx, by), Math.abs(bz)) * 180 / Math.PI;
+    const delta2 = Math.abs(theta2 - LGMI_INITIAL_ANGLES[2]);
+
+    return { ax, ay, az, mag1, theta1, delta1, bx, by, bz, mag2, theta2, delta2 };
+  }
+
+  function getMoistureValues(d) {
+    if (!d || typeof d !== 'object') return { m1: 40, m2: 40, m3: 40, avg: 40, individual: true };
+
+    const m1raw = getField(d, 'moisture1', 'soil1', 'sensor1', 'soil_1', 'moisture_1', 'soilSensor1', 'm1');
+    const m2raw = getField(d, 'moisture2', 'soil2', 'sensor2', 'soil_2', 'moisture_2', 'soilSensor2', 'm2');
+    const m3raw = getField(d, 'moisture3', 'soil3', 'sensor3', 'soil_3', 'moisture_3', 'soilSensor3', 'm3');
+    const hasIndividual = (m1raw !== 0 || m2raw !== 0 || m3raw !== 0);
+
+    if (hasIndividual) {
+      const m1 = parseFloat(m1raw) || 0, m2 = parseFloat(m2raw) || 0, m3 = parseFloat(m3raw) || 0;
+      return { m1, m2, m3, avg: Math.round((m1 + m2 + m3) / 3), individual: true };
+    }
+
+    const avgOnly = parseFloat(getField(d, 'soil_moisture', 'soilMoisture', 'soil_avg', 'soilAvg')) || 0;
+    const fallback = avgOnly > 0 ? avgOnly : 40;
+    return { m1: fallback, m2: fallback, m3: fallback, avg: Math.round(fallback), individual: false };
+  }
+
+  function getSoilCategory(pct) {
+    const val = Number(pct) || 0;
+    if (val < 30) {
+      return { label: 'Dry', cls: 'cat-dry', color: '#D97706' };
+    } else if (val <= 60) {
+      return { label: 'Moderate', cls: 'cat-moderate', color: '#16A34A' };
+    } else if (val <= 80) {
+      return { label: 'Wet', cls: 'cat-wet', color: '#2563EB' };
+    } else {
+      return { label: 'Saturated', cls: 'cat-crit-wet', color: '#DC2626' };
+    }
+  }
+
+  /* ═════════════════════════════════════════════════════════════════════
+     FIVE-LEVEL LANDSLIDE RISK ENGINE (COMBINED LRI & THRESHOLD RISK)
+     ═════════════════════════════════════════════════════════════════════ */
+  const LRI_SEVERITY_BY_NAME = Object.freeze({
+    'Very Low Risk': 0,
+    'Low Risk': 1,
+    'Moderate Risk': 2,
+    'High Risk': 3,
+    'Very High Risk': 4
+  });
+
+  const SEVERITY_LEVEL_LIST = Object.freeze([
+    {
+      severity: 0,
+      label: 'Very Low Risk',
+      color: '#16A34A',
+      badgeBg: '#DCFCE7',
+      badgeBorder: '#86EFAC',
+      needleAngle: -72,
+      desc: 'Slope is well within baseline stability. All sensor departures near zero.'
+    },
+    {
+      severity: 1,
+      label: 'Low Risk',
+      color: '#84CC16',
+      badgeBg: '#ECFCCB',
+      badgeBorder: '#BEF264',
+      needleAngle: -36,
+      desc: 'Minor sensor variation observed. Normal monitoring vigilance recommended.'
+    },
+    {
+      severity: 2,
+      label: 'Moderate Risk',
+      color: '#EAB308',
+      badgeBg: '#FEF3C7',
+      badgeBorder: '#FDE047',
+      needleAngle: 0,
+      desc: 'Elevated weighted departure in load, acceleration, or saturation. Active watch.'
+    },
+    {
+      severity: 3,
+      label: 'High Risk',
+      color: '#F97316',
+      badgeBg: '#FFEDD5',
+      badgeBorder: '#FDBA74',
+      needleAngle: 36,
+      desc: 'Hazardous slope departure detected across multiple weighted parameters. Warning advisory.'
+    },
+    {
+      severity: 4,
+      label: 'Very High Risk',
+      color: '#EF4444',
+      badgeBg: '#FEE2E2',
+      badgeBorder: '#FCA5A5',
+      needleAngle: 72,
+      desc: 'Severe multi-sensor anomaly exceeding critical limits. Immediate evacuation advisory.'
+    }
+  ]);
+
+  function getStationSensorMotion(isP2, sensor) {
+    if (!sensor) return { ax: 0, ay: 0, az: 0, theta1: 0, delta1: 0, deltaMax: 0 };
+    if (isP2) {
+      const ax = typeof sensor.ax === 'number' ? sensor.ax : (parseFloat(sensor.ax) || 1.5700);
+      const ay = typeof sensor.ay === 'number' ? sensor.ay : (parseFloat(sensor.ay) || 1.9600);
+      const az = typeof sensor.az === 'number' ? sensor.az : (parseFloat(sensor.az) || 2.4200);
+      const mag1 = Math.sqrt(ax * ax + ay * ay + az * az);
+      const theta1 = Math.atan2(Math.hypot(ax, ay), Math.abs(az)) * 180 / Math.PI;
+      const delta1 = Math.abs(theta1 - POLE2_INITIAL_ANGLE);
+      return { ax, ay, az, mag1, theta1, delta1, deltaMax: delta1 };
+    } else {
+      const motion = computeSensorMotion(sensor);
+      const deltaMax = Math.max(motion.delta1, motion.delta2 || 0);
+      return Object.assign({}, motion, { deltaMax });
+    }
+  }
+
+  function calculateLocalLRI(sensor, weather) {
+    if (!sensor) return null;
+    const { avg: sm } = getMoistureValues(sensor);
+    const motion = computeSensorMotion(sensor);
+    const weight = parseFloat(sensor.weight) || 0;
+    const rain24 = parseFloat((weather && (weather.rain_24h !== undefined ? weather.rain_24h : weather.rain24h)) || weather?.rain || 0);
+
+    const dL = Math.max(0, weight - REF_WEIGHT);
+    const zL = Math.min(1.0, dL / SCALE_WEIGHT);
+
+    const devX = motion.ax - REF_ACCEL.x;
+    const devY = motion.ay - REF_ACCEL.y;
+    const devZ = motion.az - REF_ACCEL.z;
+    const dA = Math.sqrt(devX * devX + devY * devY + devZ * devZ);
+    const zA = Math.min(1.0, dA / SCALE_ACCEL_DEV);
+
+    const zR = Math.min(1.0, Math.max(0, rain24) / SCALE_RAIN);
+    const zM = Math.min(1.0, Math.max(0, sm) / 100.0);
+
+    const score = (0.40 * zL + 0.30 * zA + 0.20 * zR + 0.10 * zM) * 100.0;
+
+    let category = 'Very Low Risk';
+    if (score >= 80.0) category = 'Very High Risk';
+    else if (score >= 60.0) category = 'High Risk';
+    else if (score >= 40.0) category = 'Moderate Risk';
+    else if (score >= 20.0) category = 'Low Risk';
+
+    return { score, category, zL, zA, zR, zM, dL, dA, sm, rain24, isLocal: true };
+  }
+
+  function getPoleLriData(poleId) {
+    const isP2 = (poleId === 'Pole-02' || poleId === 'pole_2' || poleId === 'pole2');
+    const poleKey = isP2 ? 'pole2' : 'pole2';
+    const now = Date.now();
+
+    // 1. Authoritative Firebase LRI or ML
+    const fbLri = (currentLriResults && (currentLriResults[poleKey] || currentLriResults[isP2 ? 'POLE_2' : 'POLE_2'])) ||
+                  (currentMlResults && (currentMlResults[poleKey] || currentMlResults[isP2 ? 'POLE_2' : 'POLE_2'])) || null;
+
+    if (fbLri && fbLri.data_validity !== 'INVALID') {
+      const category = fbLri.risk_category || fbLri.category || fbLri.primary_risk || 'Low Risk';
+      const score = Number.isFinite(Number(fbLri.score)) ? Number(fbLri.score) : null;
+      const sev = LRI_SEVERITY_BY_NAME[category] ?? 1;
+      const conf = RISK_CATEGORIES[category] || RISK_CATEGORIES['Low Risk'];
+      const angle = Number.isFinite(score) ? Math.max(-90, Math.min(90, -90 + (score * 1.8))) : conf.needleAngle;
+      const ts = packetTimeMs(null, fbLri);
+      const isFresh = ts > 0 ? (now - ts <= SENSOR_ONLINE_THRESHOLD_MS) : true;
+      const isDelayed = ts > 0 && !isFresh;
+      const isGen = Boolean(fbLri.is_generated || fbLri.is_simulation || fbLri.data_source === 'GENERATED_FALLBACK');
+      const dSrc = fbLri.data_source || (isGen ? 'GENERATED_FALLBACK' : 'REAL_HARDWARE');
+
+      return {
+        isValid: true,
+        isStale: !isFresh,
+        isDelayed,
+        isGenerated: isGen,
+        dataSource: dSrc,
+        category,
+        severity: sev,
+        score,
+        angle,
+        timestamp: ts,
+        color: conf.color,
+        desc: conf.desc,
+        source: isGen ? 'Generated Dataset' : 'Firebase LRI'
+      };
+    }
+
+    // 2. Fallback to physical Das et al. model on telemetry
+    const sensor = isP2 ? currentPole2Reading : currentPole2Reading;
+    if (sensor) {
+      const calc = calculateLocalLRI(sensor, currentWeatherReading);
+      if (calc) {
+        const lastPkt = isP2 ? pole2LastPacketAt : pole2LastPacketAt;
+        const conn = getHardwareConnectionStatus(lastPkt);
+        const sev = LRI_SEVERITY_BY_NAME[calc.category] ?? 0;
+        const conf = RISK_CATEGORIES[calc.category] || RISK_CATEGORIES['Very Low Risk'];
+        const angle = Math.max(-90, Math.min(90, -90 + (calc.score * 1.8)));
+
+        return {
+          isValid: true,
+          isStale: conn.status !== 'Online',
+          isDelayed: conn.status === 'Delayed',
+          category: calc.category,
+          severity: sev,
+          score: calc.score,
+          angle,
+          timestamp: lastPkt,
+          color: conf.color,
+          desc: conf.desc,
+          source: 'Physical Model'
+        };
+      }
+    }
+
+    return {
+      isValid: false,
+      isStale: true,
+      isDelayed: false,
+      category: 'Unavailable',
+      severity: -1,
+      score: null,
+      angle: -90,
+      timestamp: 0,
+      color: '#94A3B8',
+      desc: 'Sensor telemetry stale or offline'
+    };
+  }
+
+  function getPoleThresholdData(poleId) {
+    const isP2 = (poleId === 'Pole-02' || poleId === 'pole_2' || poleId === 'pole2');
+    const poleKey = isP2 ? 'pole2' : 'pole2';
+    const now = Date.now();
+
+    // 1. Authoritative Firebase Threshold
+    const fbThresh = (currentThresholdResults && (currentThresholdResults[poleKey] || currentThresholdResults[isP2 ? 'POLE_2' : 'POLE_2'])) || null;
+
+    if (fbThresh && fbThresh.data_validity !== 'INVALID' && fbThresh.status) {
+      const status = fbThresh.status || 'Safe';
+      const severity = Number.isFinite(fbThresh.severity) ? fbThresh.severity :
+        (status === 'Warning' || status === 'Critical' ? 4 : (status === 'Watch' || status === 'Alert' ? 2 : 0));
+      const mappedCategory = fbThresh.mappedCategory || (severity === 4 ? 'Very High Risk' : (severity === 2 ? 'Moderate Risk' : 'Very Low Risk'));
+      const triggerReason = fbThresh.triggerReason || 'Authoritative threshold evaluation';
+      const color = severity === 4 ? '#EF4444' : (severity === 2 ? '#EAB308' : '#16A34A');
+      const ts = packetTimeMs(null, fbThresh);
+      const isFresh = ts > 0 ? (now - ts <= SENSOR_ONLINE_THRESHOLD_MS) : true;
+      const isDelayed = ts > 0 && !isFresh;
+      const isGen = Boolean(fbThresh.is_generated || fbThresh.is_simulation || fbThresh.data_source === 'GENERATED_FALLBACK');
+      const dSrc = fbThresh.data_source || (isGen ? 'GENERATED_FALLBACK' : 'REAL_HARDWARE');
+
+      return {
+        isValid: true,
+        isStale: !isFresh,
+        isDelayed,
+        isGenerated: isGen,
+        dataSource: dSrc,
+        status,
+        severity,
+        mappedCategory,
+        triggerReason,
+        timestamp: ts,
+        color,
+        source: isGen ? 'Generated Dataset' : 'Firebase Threshold'
+      };
+    }
+
+    // 2. Fallback to calculating Threshold from telemetry
+    const sensor = isP2 ? currentPole2Reading : currentPole2Reading;
+    if (sensor) {
+      const { avg: sm } = getMoistureValues(sensor);
+      let smStatus = 'Safe', smSev = 0;
+      if (sm >= 80) { smStatus = 'Warning'; smSev = 4; }
+      else if (sm >= 65) { smStatus = 'Watch'; smSev = 2; }
+
+      const motion = getStationSensorMotion(isP2, sensor);
+      const delta = motion.deltaMax;
+      let tiltStatus = 'Safe', tiltSev = 0;
+      if (delta >= 3.0) { tiltStatus = 'Warning'; tiltSev = 4; }
+      else if (delta >= 1.5) { tiltStatus = 'Watch'; tiltSev = 2; }
+
+      const weather = currentWeatherReading;
+      const rain1h = parseFloat((weather && (weather.rain !== undefined ? weather.rain : weather.rain1h)) || 0);
+      const rain24h = parseFloat((weather && (weather.rain_24h !== undefined ? weather.rain_24h : weather.rain24h)) || 0);
+      let rainStatus = 'Safe', rainSev = 0;
+      if (rain1h >= 75 || rain24h > 150) { rainStatus = 'Warning'; rainSev = 4; }
+      else if (rain1h >= 35 || rain24h > 75) { rainStatus = 'Watch'; rainSev = 2; }
+
+      const weightG = parseFloat(sensor.weight) || 0;
+      let weightStatus = 'Safe', weightSev = 0;
+      if (weightG >= 500) { weightStatus = 'Warning'; weightSev = 4; }
+      else if (weightG >= 200) { weightStatus = 'Watch'; weightSev = 2; }
+
+      const maxSev = Math.max(smSev, tiltSev, rainSev, weightSev);
+      const lastPkt = isP2 ? pole2LastPacketAt : pole2LastPacketAt;
+      const conn = getHardwareConnectionStatus(lastPkt);
+
+      let status = 'Safe', mappedCategory = 'Very Low Risk', color = '#16A34A', reason = 'All parameters normal';
+      if (maxSev === 4) {
+        status = 'Warning'; mappedCategory = 'Very High Risk'; color = '#EF4444';
+        const triggers = [];
+        if (smSev === 4) triggers.push(`Soil Moisture: ${sm}%`);
+        if (tiltSev === 4) triggers.push(`Tilt Shift: Δ ${delta.toFixed(2)}°`);
+        if (rainSev === 4) triggers.push(`Rainfall: ${rain1h.toFixed(1)} mm/h`);
+        if (weightSev === 4) triggers.push(`Debris Load: ${weightG} g`);
+        reason = triggers.join(', ');
+      } else if (maxSev === 2) {
+        status = 'Watch'; mappedCategory = 'Moderate Risk'; color = '#EAB308';
+        const triggers = [];
+        if (smSev === 2) triggers.push(`Soil Moisture: ${sm}%`);
+        if (tiltSev === 2) triggers.push(`Tilt Shift: Δ ${delta.toFixed(2)}°`);
+        if (rainSev === 2) triggers.push(`Rainfall: ${rain1h.toFixed(1)} mm/h`);
+        if (weightSev === 2) triggers.push(`Debris Load: ${weightG} g`);
+        reason = triggers.join(', ');
+      }
+
+      return {
+        isValid: true,
+        isStale: conn.status !== 'Online',
+        isDelayed: conn.status === 'Delayed',
+        status,
+        severity: maxSev,
+        mappedCategory,
+        color,
+        triggerReason: reason,
+        timestamp: lastPkt,
+        sm, delta, rain1h, rain24h, weightG,
+        source: 'Sensor Threshold'
+      };
+    }
+
+    return {
+      isValid: false,
+      isStale: true,
+      isDelayed: false,
+      status: 'Unavailable',
+      severity: -1,
+      mappedCategory: 'Risk Unavailable',
+      color: '#94A3B8',
+      desc: 'Telemetry offline or stale'
+    };
+  }
+
+  function logRiskDiagnostics(poleName, lri, thresh, combined, connStatus) {
+    if (typeof console === 'undefined' || !console.log) return;
+    const now = Date.now();
+    const pktTime = connStatus?.lastPacketAt || (poleName === 'Pole 2' ? pole2LastPacketAt : pole2LastPacketAt);
+    const ageSec = pktTime > 0 ? Math.round((now - pktTime) / 1000) : 'N/A';
+    console.log(`[LandSafe Diagnostic] Station: ${poleName} | Hardware: ${connStatus?.status || 'Unknown'} | Path: ${poleName === 'Pole 2' ? 'pole2 / new_pole' : 'sensors'} | LRI: ${lri?.category || 'Unavailable'} (sev: ${lri?.severity}) | Threshold: ${thresh?.status || 'Unavailable'} (sev: ${thresh?.severity}) | Sensor TS: ${pktTime ? new Date(pktTime).toISOString() : 'N/A'} | Age: ${ageSec}s | Combined: ${combined?.label} (sev: ${combined?.severity}, angle: ${combined?.angle}°)`);
+  }
+
+  function getCombinedRiskData(poleId) {
+    const isP2 = (poleId === 'Pole-02' || poleId === 'pole_2' || poleId === 'pole2');
+    const poleName = isP2 ? 'Pole 2' : 'Pole 2';
+    const lastPkt = isP2 ? pole2LastPacketAt : pole2LastPacketAt;
+    const connStatus = Object.assign({}, getHardwareConnectionStatus(lastPkt), { lastPacketAt: lastPkt });
+
+    const lri = getPoleLriData(poleId);
+    const threshold = getPoleThresholdData(poleId);
+
+    // Case 10: Both Missing
+    if (!lri.isValid && !threshold.isValid) {
+      const res = Object.assign({}, RISK_CATEGORIES['Risk Unavailable'], {
+        score: null,
+        severity: -1,
+        isAvailable: false,
+        isValid: false,
+        isStale: true,
+        needleAngle: -90,
+        angle: -90,
+        poleId: poleName,
+        lriLabel: 'Unavailable',
+        lriColor: '#94A3B8',
+        thresholdLabel: 'Unavailable',
+        thresholdColor: '#94A3B8',
+        combinedLabel: 'Risk Unavailable',
+        desc: 'Awaiting sensor telemetry and risk evaluations from monitoring stations.',
+        connStatus,
+        lri,
+        threshold
+      });
+      logRiskDiagnostics(poleName, lri, threshold, res, connStatus);
+      return res;
+    }
+
+    // Only Threshold is valid (Partial Assessment)
+    if (!lri.isValid && threshold.isValid) {
+      const target = SEVERITY_LEVEL_LIST[threshold.severity] || SEVERITY_LEVEL_LIST[0];
+      const isDelayed = threshold.isDelayed;
+      const label = `${target.label} (Threshold Only${isDelayed ? ' · Last Known' : ''})`;
+      const threshLabel = `${threshold.status}${isDelayed ? ' (Last Known)' : ''}`;
+      const res = Object.assign({}, target, {
+        score: null,
+        severity: threshold.severity,
+        isAvailable: true,
+        isValid: true,
+        isStale: threshold.isStale,
+        isPartial: true,
+        partialSource: 'Threshold',
+        angle: target.needleAngle,
+        poleId: poleName,
+        label,
+        lriLabel: 'Unavailable',
+        lriColor: '#94A3B8',
+        thresholdLabel: threshLabel,
+        thresholdColor: threshold.color || target.color,
+        combinedLabel: label,
+        desc: `${target.desc} [Threshold: ${threshold.triggerReason} · LRI unavailable]`,
+        connStatus,
+        lri,
+        threshold
+      });
+      logRiskDiagnostics(poleName, lri, threshold, res, connStatus);
+      return res;
+    }
+
+    // Only LRI is valid (Partial Assessment)
+    if (lri.isValid && !threshold.isValid) {
+      const target = SEVERITY_LEVEL_LIST[lri.severity] || SEVERITY_LEVEL_LIST[0];
+      const isDelayed = lri.isDelayed;
+      const label = `${target.label} (LRI Only${isDelayed ? ' · Last Known' : ''})`;
+      const lriLabel = `${lri.category}${isDelayed ? ' (Last Known)' : ''}`;
+      const angle = Number.isFinite(lri.score) ? lri.angle : target.needleAngle;
+      const res = Object.assign({}, target, {
+        score: lri.score,
+        severity: lri.severity,
+        isAvailable: true,
+        isValid: true,
+        isStale: lri.isStale,
+        isPartial: true,
+        partialSource: 'LRI',
+        angle,
+        poleId: poleName,
+        label,
+        lriLabel,
+        lriColor: lri.color || target.color,
+        thresholdLabel: 'Unavailable',
+        thresholdColor: '#94A3B8',
+        combinedLabel: label,
+        desc: `${target.desc} [LRI Model · Threshold evaluation unavailable]`,
+        connStatus,
+        lri,
+        threshold
+      });
+      logRiskDiagnostics(poleName, lri, threshold, res, connStatus);
+      return res;
+    }
+
+    // Both Valid: Higher Risk Category Rule
+    // combinedSeverity = Math.max(lri.severity, threshold.severity)
+    const combinedSev = Math.max(lri.severity, threshold.severity);
+    const target = SEVERITY_LEVEL_LIST[combinedSev] || SEVERITY_LEVEL_LIST[0];
+    const isDelayed = lri.isDelayed || threshold.isDelayed;
+
+    let angle;
+    let governingSource;
+    if (threshold.severity > lri.severity) {
+      angle = target.needleAngle;
+      governingSource = `Threshold Detection (${poleName})`;
+    } else if (lri.severity > threshold.severity) {
+      angle = Number.isFinite(lri.score) ? lri.angle : target.needleAngle;
+      governingSource = `LRI Model (${poleName})`;
+    } else {
+      angle = Number.isFinite(lri.score) ? lri.angle : target.needleAngle;
+      governingSource = `Consensus (${poleName})`;
+    }
+
+    const combinedLabel = isDelayed ? `${target.label} (Last Known)` : target.label;
+    const lriLabel = lri.isDelayed ? `${lri.category} (Last Known)` : lri.category;
+    const threshLabel = threshold.isDelayed ? `${threshold.status} (Last Known)` : threshold.status;
+
+    let desc = target.desc;
+    if (threshold.severity > lri.severity && threshold.severity >= 2) {
+      desc = `Active Threshold Alert: ${threshold.triggerReason}. ${target.desc}`;
+    }
+
+    const isGen = Boolean((lri && lri.isGenerated) || (threshold && threshold.isGenerated));
+    const dSrc = (lri && lri.dataSource) || (threshold && threshold.dataSource) || (isGen ? 'GENERATED_FALLBACK' : 'REAL_HARDWARE');
+
+    const res = Object.assign({}, target, {
+      score: lri.score,
+      severity: combinedSev,
+      isAvailable: true,
+      isValid: true,
+      isStale: isDelayed,
+      isGenerated: isGen,
+      dataSource: dSrc,
+      isPartial: false,
+      angle,
+      poleId: poleName,
+      governingSource,
+      label: combinedLabel,
+      lriLabel,
+      lriColor: lri.color || '#16A34A',
+      thresholdLabel: threshLabel,
+      thresholdColor: threshold.color || target.color,
+      combinedLabel,
+      desc,
+      connStatus,
+      lri,
+      threshold
+    });
+    logRiskDiagnostics(poleName, lri, threshold, res, connStatus);
+    return res;
+  }
+
+  function getPoleRiskData(poleId) {
+    return getCombinedRiskData(poleId);
+  }
+
+  function getCombinedNetworkRisk() {
+    const r1 = getCombinedRiskData('Pole-02');
+    const r2 = getCombinedRiskData('Pole-02');
+
+    if (!r1.isAvailable && !r2.isAvailable) {
+      return Object.assign({}, RISK_CATEGORIES['Risk Unavailable'], {
+        score: null,
+        severity: -1,
+        isAvailable: false,
+        governingPole: 'None',
+        lriLabel: 'Unavailable',
+        lriColor: '#94A3B8',
+        thresholdLabel: 'Unavailable',
+        thresholdColor: '#94A3B8',
+        combinedLabel: 'Risk Unavailable',
+        desc: 'Awaiting sensor telemetry and risk evaluations from monitoring stations.',
+        r1, r2
+      });
+    }
+
+    if (!r1.isAvailable) {
+      return Object.assign({}, r2, { governingPole: 'Pole 2', r1, r2 });
+    }
+    if (!r2.isAvailable) {
+      return Object.assign({}, r1, { governingPole: 'Pole 2', r1, r2 });
+    }
+
+    if (r2.severity > r1.severity) {
+      return Object.assign({}, r2, { governingPole: 'Pole 2', r1, r2 });
+    }
+    if (r1.severity > r2.severity) {
+      return Object.assign({}, r1, { governingPole: 'Pole 2', r1, r2 });
+    }
+
+    const s1 = r1.score !== null ? r1.score : (r1.severity * 20 + 10);
+    const s2 = r2.score !== null ? r2.score : (r2.severity * 20 + 10);
+    if (s2 > s1) {
+      return Object.assign({}, r2, { governingPole: 'Pole 2', r1, r2 });
+    }
+    return Object.assign({}, r1, { governingPole: 'Pole 2', r1, r2 });
+  }  /* ═════════════════════════════════════════════════════════════════════
+     POLE 2 DATA NORMALIZATION (TASK 3)
+     ═════════════════════════════════════════════════════════════════════ */
+  function normalizePole2Reading(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    let d = raw;
+    if (typeof raw === 'object' && !Array.isArray(raw)) {
+      const keys = Object.keys(raw);
+      if (keys.length > 0 && typeof raw[keys[0]] === 'object' && raw[keys[0]] !== null) {
+        keys.sort();
+        d = raw[keys[keys.length - 1]];
+      }
+    }
+
+    const sm1 = pickNumeric(d, ['soil1', 'soil_1', 'moisture1', 'moisture_1', 'sm1', 'm1']) ?? 42;
+    const sm2 = pickNumeric(d, ['soil2', 'soil_2', 'moisture2', 'moisture_2', 'sm2', 'm2']) ?? 36;
+    const sm3 = pickNumeric(d, ['soil3', 'soil_3', 'moisture3', 'moisture_3', 'sm3', 'm3']);
+
+    const ax = pickNumeric(d, ['ax', 'accel_x', 'accelX', 'x', 'accel1_x']) ?? 1.5700;
+    const ay = pickNumeric(d, ['ay', 'accel_y', 'accelY', 'y', 'accel1_y']) ?? 1.9600;
+    const az = pickNumeric(d, ['az', 'accel_z', 'accelZ', 'z', 'accel1_z']) ?? 2.4200;
+
+    const weight = pickNumeric(d, ['weight', 'weightG', 'weight_g', 'load']) ?? 0;
+    const battery = pickNumeric(d, ['battery', 'batt', 'batteryPct', 'battery_pct', 'soc']) ?? 82;
+    const pktTime = packetTimeMs(null, d);
+
+    return {
+      soil1: sm1,
+      soil2: sm2,
+      soil3: sm3,
+      ax: Number(ax),
+      ay: Number(ay),
+      az: Number(az),
+      weight: Number(weight),
+      battery: Number(battery),
+      lat: POLE_LOCATIONS.pole2.lat,
+      lon: POLE_LOCATIONS.pole2.lon,
+      sats: 0,
+      _ts: pktTime,
+      raw: d
+    };
+  }
+
+  /* ═════════════════════════════════════════════════════════════════════
+     FIREBASE RTDB INITIALIZATION & LISTENERS (TASK 6)
+     ═════════════════════════════════════════════════════════════════════ */
+  const dbUrl = 'https://landslide-ews-12015-default-rtdb.asia-southeast1.firebasedatabase.app';
+  const POLE2_HW_DB_URL = 'https://prototype-pole-2-default-rtdb.asia-southeast1.firebasedatabase.app';
+  const fbConfig = Object.assign({ databaseURL: dbUrl }, window.LANDSAFE_FIREBASE_CONFIG || {});
+  try { firebase.app(); } catch (e) { firebase.initializeApp(fbConfig); }
+  const fbDb = firebase.database();
+  const fbAuth = firebase.auth();
+  window.LandSafeFirebase = { db: fbDb, auth: fbAuth };
+
+  let pole2HwDb = null;
+  try {
+    let p2app;
+    try { p2app = firebase.app('pole2HwApp'); } catch (_) { p2app = firebase.initializeApp({ databaseURL: POLE2_HW_DB_URL }, 'pole2HwApp'); }
+    pole2HwDb = p2app.database();
+  } catch (e) {
+    console.warn('Pole 2 HW DB init notice:', e);
+  }
+
+  let _fbListenersAttached = false;
+  function initFirebase() {
+    if (_fbListenersAttached) return;
+    _fbListenersAttached = true;
+
+    fbAuth.signInAnonymously().catch(e => console.warn('Silent auth fallback:', e));
+
+    fbDb.ref('.info/connected').on('value', snap => {
+      isFirebaseConnected = !!snap.val();
+      updateConnectionPill();
+    });
+
+    // 1. Subscribe to Authoritative Pole 2 Hardware RTDB (prototype-pole-2-default-rtdb)
+    if (pole2HwDb) {
+      pole2HwDb.ref('/').on('value', snap => {
+        const val = snap.val();
+        if (!val) {
+          currentPole2Reading = null;
+          buildActivePoles();
+          updateTelemetryUI();
+          return;
+        }
+        let node = val;
+        if (val.sensors) node = val.sensors;
+        else if (val.pole2) node = val.pole2;
+        else if (val.readings) node = val.readings;
+
+        if (typeof node === 'object' && node !== null) {
+          const keys = Object.keys(node);
+          if (keys.length > 0) {
+            recentSensorRecords = keys.map(k => Object.assign({ _key: k }, node[k]));
+            const latestKey = keys[keys.length - 1];
+            currentPole2Reading = normalizePole2Reading(node[latestKey]);
+            pole2LastPacketAt = packetTimeMs(latestKey, node[latestKey]) || Date.now();
+          }
+        }
+        buildActivePoles();
+        updateTelemetryUI();
+        if ($id('page-pole-details') && $id('page-pole-details').classList.contains('active')) {
+          renderPoleDetailsUI();
+          initPoleHistoryChart();
+        }
+      }, err => console.warn('Pole 2 HW listener notice:', err));
+    }
+
+    // 2. Subscribe to /pole2 & /new_pole (Pole 2)
+    const handlePole2Snap = snap => {
+      const val = snap.val();
+      if (!val) return;
+      currentPole2Reading = normalizePole2Reading(val);
+      pole2LastPacketAt = currentPole2Reading._ts || Date.now();
+      buildActivePoles();
+      updateTelemetryUI();
+      if ($id('page-pole-details') && $id('page-pole-details').classList.contains('active')) {
+        renderPoleDetailsUI();
+      }
+    };
+    fbDb.ref('pole2').on('value', handlePole2Snap, err => console.warn('pole2 listener notice:', err));
+    fbDb.ref('new_pole').on('value', handlePole2Snap, err => console.warn('new_pole listener notice:', err));
+
+    // 3. Authoritative LRI & ML Predictions (/lri_results, /ml_results)
+    fbDb.ref('lri_results').on('value', snap => {
+      currentLriResults = snap.val();
+      buildActivePoles();
+      updateTelemetryUI();
+      if ($id('page-pole-details') && $id('page-pole-details').classList.contains('active')) {
+        renderPoleDetailsUI();
+      }
+    }, err => console.warn('LRI results listener error:', err));
+
+    fbDb.ref('ml_results').on('value', snap => {
+      currentMlResults = snap.val();
+      buildActivePoles();
+      updateTelemetryUI();
+      if ($id('page-pole-details') && $id('page-pole-details').classList.contains('active')) {
+        renderPoleDetailsUI();
+      }
+    }, err => console.warn('ML results listener error:', err));
+
+    // Authoritative Threshold Results (/threshold_results & /settings/threshold_results)
+    const handleThresholdSnap = snap => {
+      const val = snap.val();
+      if (val) {
+        currentThresholdResults = Object.assign({}, currentThresholdResults || {}, val);
+        buildActivePoles();
+        updateTelemetryUI();
+        if ($id('page-pole-details') && $id('page-pole-details').classList.contains('active')) {
+          renderPoleDetailsUI();
+        }
+      }
+    };
+    fbDb.ref('threshold_results').on('value', handleThresholdSnap, err => console.warn('Threshold results notice:', err));
+    fbDb.ref('settings/threshold_results').on('value', handleThresholdSnap, () => {});
+
+    // 4. Subscribe to /weather
+    fbDb.ref('weather').on('value', snap => {
+      const w = snap.val();
+      if (w) {
+        applyWeatherToApp(w);
+        updateTelemetryUI();
+      }
+    }, err => console.warn('Weather listener error:', err));
+
+    // 5. Subscribe to /manual_alerts & /alerts
+    fbDb.ref('manual_alerts').orderByChild('createdAt').limitToLast(50).on('value', snap => {
+      const a = snap.val();
+      rawManualAlerts = [];
+      if (a) {
+        Object.entries(a).forEach(([id, obj]) => {
+          rawManualAlerts.push(Object.assign({ id, source: 'manual' }, obj));
+        });
+      }
+      mergeAndRenderAlerts();
+    }, err => console.warn('Manual alerts error:', err));
+
+    fbDb.ref('alerts').orderByChild('createdAt').limitToLast(50).on('value', snap => {
+      const a = snap.val();
+      rawAutomatedAlerts = [];
+      if (a) {
+        Object.entries(a).forEach(([id, obj]) => {
+          rawAutomatedAlerts.push(Object.assign({ id, source: 'system' }, obj));
+        });
+      }
+      mergeAndRenderAlerts();
+    }, err => console.warn('Automated alerts error:', err));
+  }
+
+  /* ═════════════════════════════════════════════════════════════════════
+     SYNCHRONIZED WEATHER CONTROLLER (TASK 5)
+     ═════════════════════════════════════════════════════════════════════ */
+  function applyWeatherToApp(w) {
+    if (!w) return;
+    currentWeatherReading = w;
+
+    const temp = Number(w.temperature);
+    const hum = Number(w.humidity);
+    const rain1h = (w.rain !== null && w.rain !== undefined && Number.isFinite(Number(w.rain))) ? Number(w.rain) : 0;
+    const rain24hRaw = (w.rain_24h !== null && w.rain_24h !== undefined) ? w.rain_24h : w.rain24h;
+    const rain24h = (rain24hRaw !== null && rain24hRaw !== undefined && Number.isFinite(Number(rain24hRaw))) ? Number(rain24hRaw) : 0;
+    const wind = Number(w.wind_speed) || 0;
+    const cond = w.condition || 'Partly Cloudy';
+
+    if ($id('valTemp')) $id('valTemp').textContent = (!isNaN(temp) ? temp.toFixed(1) : '24.2') + '°C';
+    if ($id('valHum')) $id('valHum').textContent = (!isNaN(hum) ? Math.round(hum) : 78) + '%';
+    if ($id('valRain')) $id('valRain').textContent = rain1h.toFixed(1) + ' mm';
+    if ($id('valRain24')) $id('valRain24').textContent = rain24h.toFixed(1) + ' mm';
+    if ($id('valWind')) $id('valWind').textContent = wind.toFixed(1) + ' km/h';
+    if ($id('valWeatherDesc')) $id('valWeatherDesc').textContent = cond;
+    if ($id('factorRain')) $id('factorRain').textContent = rain1h.toFixed(1) + ' mm/h';
+    if ($id('detRain1h')) $id('detRain1h').textContent = rain1h.toFixed(1) + ' mm/h';
+    if ($id('detRain24h')) $id('detRain24h').textContent = rain24h.toFixed(1) + ' mm';
+
+    const iconEl = $id('weatherIcon');
+    if (iconEl) {
+      const lower = cond.toLowerCase();
+      if (lower.includes('rain') || lower.includes('drizzle')) iconEl.setAttribute('icon', 'material-symbols:rainy-rounded');
+      else if (lower.includes('cloud') || lower.includes('overcast')) iconEl.setAttribute('icon', 'material-symbols:partly-cloudy-day-rounded');
+      else if (lower.includes('clear') || lower.includes('sun')) iconEl.setAttribute('icon', 'material-symbols:sunny-rounded');
+      else if (lower.includes('thunder')) iconEl.setAttribute('icon', 'material-symbols:thunderstorm-rounded');
+    }
+  }
+
+  async function fetchRealtimeWeather(lat, lon) {
+    if (currentWeatherReading && (Date.now() - (currentWeatherReading.updatedAt || 0) < 600000)) {
+      return;
+    }
+    const WEATHER_API_KEY = '6cba7cc12fc4aa6aced83b23e0da0197';
+    const l_lat = lat || DEFAULT_LAT;
+    const l_lon = lon || DEFAULT_LON;
+    try {
+      const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${l_lat}&lon=${l_lon}&appid=${WEATHER_API_KEY}&units=metric`);
+      if (res.ok) {
+        const data = await res.json();
+        const rain1h = data.rain ? (data.rain['1h'] !== undefined ? Number(data.rain['1h']) : 0) : 0;
+        const fallbackWeather = {
+          temperature: Number(data.main?.temp ?? 24.2),
+          humidity: Number(data.main?.humidity ?? 78),
+          rain: Number(rain1h),
+          rain_24h: 0.0,
+          wind_speed: Number(data.wind?.speed ?? 8),
+          condition: data.weather?.[0]?.main || 'Partly Cloudy',
+          updatedAt: Date.now()
+        };
+        applyWeatherToApp(fallbackWeather);
+      }
+    } catch (e) {
+      console.warn('Weather API fetch fallback:', e);
+    }
+  }
+
+  /* ═════════════════════════════════════════════════════════════════════
+     TELEMETRY UI REFRESH CONTROLLER
+     ═════════════════════════════════════════════════════════════════════ */
+  function updateConnectionPill() {
+    const liveDot = $id('liveDot');
+    const liveText = $id('liveText');
+    const rtdbPill = $id('rtdbPill');
+
+    const now = Date.now();
+    const activePacketTime = selectedStation === 'Pole-02' ? pole2LastPacketAt : pole2LastPacketAt;
+    const isStale = !activePacketTime || (now - activePacketTime) > STALE_THRESHOLD_MS;
+
+    if (!isFirebaseConnected || isStale) {
+      if (liveDot) { liveDot.style.background = '#EF4444'; liveDot.style.animation = 'none'; }
+      if (liveText) { liveText.textContent = isStale ? 'STALE' : 'OFFLINE'; liveText.style.color = '#EF4444'; }
+      if (rtdbPill) { rtdbPill.style.background = 'rgba(239, 68, 68, 0.1)'; rtdbPill.style.borderColor = 'rgba(239, 68, 68, 0.3)'; }
+    } else {
+      if (liveDot) { liveDot.style.background = '#22C55E'; liveDot.style.animation = 'pulse 2s infinite'; }
+      if (liveText) { liveText.textContent = 'LIVE'; liveText.style.color = '#22C55E'; }
+      if (rtdbPill) { rtdbPill.style.background = 'rgba(34, 197, 94, 0.1)'; rtdbPill.style.borderColor = 'rgba(34, 197, 94, 0.3)'; }
+    }
+  }
+
+  function updateTelemetryUI() {
+    updateConnectionPill();
+
+    const activeStation = getActiveStationId();
+    const isP2 = (activeStation === 'Pole-02');
+    const activeName = isP2 ? 'Pole 2' : 'Pole 2';
+
+    let d = isP2 ? (currentPole2Reading || POLE2_BASELINE) : (currentPole2Reading || {});
+    currentSensorReading = d;
+
+    // Moisture calculation
+    let sm1, sm2, sm3, avg;
+    if (isP2) {
+      sm1 = d.soil1 !== null && d.soil1 !== undefined ? Math.round(d.soil1) : 42;
+      sm2 = d.soil2 !== null && d.soil2 !== undefined ? Math.round(d.soil2) : 36;
+      sm3 = null;
+      avg = Math.round((sm1 + sm2) / 2);
+    } else {
+      const parsed = getMoistureValues(d);
+      sm1 = parsed.m1; sm2 = parsed.m2; sm3 = parsed.m3; avg = parsed.avg;
+    }
+
+    const catAvg = getSoilCategory(avg);
+
+    // Soil Moisture Needle Rotation (-90 to +90 deg)
+    const soilAngle = Math.max(-90, Math.min(90, -90 + (avg * 1.8)));
+    const soilNeedle = $id('soilNeedle');
+    if (soilNeedle) soilNeedle.style.transform = `rotate(${soilAngle}deg)`;
+
+    if ($id('soilStatusLabel')) {
+      $id('soilStatusLabel').textContent = `${catAvg.label} (${avg}%)`;
+      $id('soilStatusLabel').style.color = catAvg.color;
+    }
+    if ($id('soilStatusDesc')) {
+      if (avg < 30) $id('soilStatusDesc').textContent = 'Low soil moisture. Surface horizon dry, no deep pore pressure build up.';
+      else if (avg <= 60) $id('soilStatusDesc').textContent = 'Optimal soil retention. Moisture balance and shear strength stable.';
+      else if (avg <= 80) $id('soilStatusDesc').textContent = 'High soil saturation! Moisture accumulation elevated across tiers.';
+      else $id('soilStatusDesc').textContent = 'Critical water saturation! Extreme liquefaction hazard on slope.';
+    }
+    if ($id('soilAvgBadge')) $id('soilAvgBadge').textContent = `(Avg: ${avg}%)`;
+    if ($id('soilAvgText')) $id('soilAvgText').textContent = `${avg}%`;
+    if ($id('soilCatText')) $id('soilCatText').textContent = `${catAvg.label} Moisture`;
+    if ($id('soilAvgCategoryBadge')) {
+      $id('soilAvgCategoryBadge').textContent = catAvg.label;
+      $id('soilAvgCategoryBadge').className = 'ls-soil-cat-badge ' + catAvg.cls;
+    }
+
+    // Motion calculation
+    let motion;
+    if (isP2) {
+      const ax = typeof d.ax === 'number' ? d.ax : (parseFloat(d.ax) || 1.5700);
+      const ay = typeof d.ay === 'number' ? d.ay : (parseFloat(d.ay) || 1.9600);
+      const az = typeof d.az === 'number' ? d.az : (parseFloat(d.az) || 2.4200);
+      const mag1 = Math.sqrt(ax * ax + ay * ay + az * az);
+      const theta1 = Math.atan2(Math.hypot(ax, ay), Math.abs(az)) * 180 / Math.PI;
+      const delta1 = Math.abs(theta1 - POLE2_INITIAL_ANGLE);
+      motion = { ax, ay, az, mag1, theta1, delta1, bx: ax, by: ay, bz: az, mag2: mag1, theta2: theta1, delta2: delta1 };
+    } else {
+      motion = computeSensorMotion(d);
+    }
+
+    if ($id('valRealTilt')) $id('valRealTilt').textContent = motion.theta1.toFixed(1) + '°';
+    if ($id('valSimTilt')) $id('valSimTilt').textContent = motion.theta2.toFixed(1) + '°';
+
+    const subReal = $id('subRealTilt');
+    if (subReal) {
+      const stableText = motion.delta1 > 2.0 ? 'Displacement Detected' : motion.delta1 > 0.8 ? 'Elevated Shift' : 'Stable';
+      subReal.textContent = `Status: ${stableText} (Δ ${motion.delta1.toFixed(4)}°)`;
+      subReal.style.color = motion.delta1 > 2.0 ? '#EF4444' : motion.delta1 > 0.8 ? '#F59E0B' : '#16A34A';
+    }
+
+    const subSim = $id('subSimTilt');
+    if (subSim) {
+      const steadyText = motion.delta2 > 2.0 ? 'Movement Alert' : motion.delta2 > 0.8 ? 'Variation Watch' : 'Steady';
+      subSim.textContent = `Status: ${steadyText} (Δ ${motion.delta2.toFixed(4)}°)`;
+      subSim.style.color = motion.delta2 > 2.0 ? '#EF4444' : motion.delta2 > 0.8 ? '#F59E0B' : '#16A34A';
+    }
+
+    const motionBadge = $id('motionStatusBadge');
+    if (motionBadge) {
+      const maxDelta = Math.max(motion.delta1, motion.delta2);
+      if (maxDelta >= 3.0) {
+        motionBadge.textContent = 'CRITICAL TILT';
+        motionBadge.style.background = 'var(--ls-danger-soft)';
+        motionBadge.style.color = 'var(--ls-danger)';
+      } else if (maxDelta >= 1.0) {
+        motionBadge.textContent = 'ELEVATED TILT';
+        motionBadge.style.background = 'var(--ls-warning-soft)';
+        motionBadge.style.color = 'var(--ls-warning)';
+      } else {
+        motionBadge.textContent = 'STABLE';
+        motionBadge.style.background = 'var(--ls-safe-soft)';
+        motionBadge.style.color = 'var(--ls-safe)';
+      }
+    }
+
+    // Weight Sensor
+    const weightG = parseFloat(d.weight) || 0;
+    if ($id('valWeight')) $id('valWeight').textContent = weightG + ' g';
+    if ($id('valWeightStatus')) $id('valWeightStatus').textContent = weightG > 500 ? 'Warning: Debris Load' : 'Catch Bed Clear';
+
+    // ═══════════════ FIVE-LEVEL RISK GAUGE UPDATE ═══════════════
+    // Evaluate active station (Selected or Nearest)
+    const risk = getPoleRiskData(activeStation);
+
+    if ($id('riskBadge')) {
+      if (risk.isGenerated) {
+        $id('riskBadge').textContent = 'SIMULATION · ' + risk.label.toUpperCase();
+        $id('riskBadge').style.background = '#FEF3C7';
+        $id('riskBadge').style.color = '#B45309';
+        $id('riskBadge').style.borderColor = '#FCD34D';
+      } else {
+        $id('riskBadge').textContent = risk.label.toUpperCase();
+        $id('riskBadge').style.background = risk.badgeBg;
+        $id('riskBadge').style.color = risk.color;
+        $id('riskBadge').style.borderColor = risk.badgeBorder;
+      }
+    }
+
+    const nearestInfo = getNearestPoleInfo();
+    const isAuto = !isManualSelection;
+    const suffix = (isAuto && nearestInfo.hasGps) ? ' (Nearest)' : (isManualSelection ? ' (Manual)' : '');
+    const displayLabel = `${risk.label} — ${activeName}${suffix}`;
+
+    if ($id('riskStatusLabel')) {
+      $id('riskStatusLabel').textContent = displayLabel;
+      $id('riskStatusLabel').style.color = risk.color;
+    }
+    if ($id('riskStatusDesc')) {
+      $id('riskStatusDesc').textContent = risk.desc;
+    }
+
+    // Needle positioning
+    const needle = $id('gaugeNeedle');
+    if (needle) {
+      needle.style.transform = `rotate(${risk.angle}deg)`;
+      needle.style.opacity = risk.isAvailable ? '1.0' : '0.35';
+    }
+
+    // Combined Risk Source Breakdown Box
+    if ($id('valStationSource')) {
+      $id('valStationSource').textContent = `${activeName}${isAuto ? ' (Nearest)' : ''}`;
+    }
+    if ($id('valLriSource')) {
+      $id('valLriSource').textContent = risk.lriLabel || '--';
+      $id('valLriSource').style.color = risk.lriColor || 'inherit';
+    }
+    if ($id('valThresholdSource')) {
+      $id('valThresholdSource').textContent = risk.thresholdLabel || '--';
+      $id('valThresholdSource').style.color = risk.thresholdColor || 'inherit';
+    }
+    if ($id('valCombinedSource')) {
+      $id('valCombinedSource').textContent = risk.combinedLabel || risk.label || '--';
+      $id('valCombinedSource').style.color = risk.color || 'inherit';
+    }
+    if ($id('valGovSource')) {
+      $id('valGovSource').textContent = risk.governingSource || activeName;
+    }
+    const pktTime = isP2 ? pole2LastPacketAt : pole2LastPacketAt;
+    const lastTimeStr = pktTime > 0 ? new Date(pktTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '--';
+    if ($id('valRiskUpdated')) {
+      $id('valRiskUpdated').textContent = lastTimeStr;
+    }
+
+    // Evaluated Factors Panel
+    const factorBox = $id('riskFactorsBox');
+    if (factorBox) {
+      if (!risk.isAvailable) {
+        factorBox.innerHTML = '<strong>Evaluated Factors:</strong><br /><span style="color:var(--ls-text-muted)">Telemetry Stale or Offline — Awaiting Live Sensor Packets</span>';
+      } else {
+        const rainStr = (currentWeatherReading?.rain !== undefined ? Number(currentWeatherReading.rain).toFixed(1) : '0.0') + ' mm/h';
+        let warningWarningHtml = '';
+        if (risk.threshold && risk.threshold.severity === 4) {
+          warningWarningHtml = `<br /><span style="color:#EF4444;font-weight:700">⚠️ Active Threshold Warning: ${risk.threshold.triggerReason}</span>`;
+        } else if (risk.threshold && risk.threshold.severity === 2) {
+          warningWarningHtml = `<br /><span style="color:#EAB308;font-weight:700">⚠️ Active Threshold Watch: ${risk.threshold.triggerReason}</span>`;
+        }
+        factorBox.innerHTML = `<strong>Evaluated Factors (${activeName}):</strong><br />Soil Saturation: <span>${catAvg.label} (${avg}%)</span> • Incline: <span>Stable (${motion.theta1.toFixed(1)}°)</span> • Rain: <span>${rainStr}</span> • Debris Load: <span>${weightG} g</span>${warningWarningHtml}`;
+      }
+    }
+
+    // Nearest poles update & fleet render
+    calculateNearestPole();
+    renderSensorFleet(d);
+
+    const rainVal = parseFloat((currentWeatherReading && currentWeatherReading.rain) || 0);
+    checkAndGenerateAlerts(avg, motion.delta1, rainVal);
+  }
+
+  function renderSensorFleet(d) {
+    const list = $id('sensorFleetList');
+    if (!list) return;
+
+    const { m1, m2, m3 } = getMoistureValues(d);
+    const motion = computeSensorMotion(d);
+    const weightG = parseFloat(d.weight) || 0;
+    const sats = parseInt(pickNumeric(d, ['satellites', 'sats', 'gps_sats', 'num_sats'])) || 8;
+
+    list.innerHTML = SENSOR_FLEET.map(node => {
+      let reading = 'Active';
+      if (node.id === 'SEN-SM1') reading = `${m1}% (${getSoilCategory(m1).label})`;
+      else if (node.id === 'SEN-SM2') reading = `${m2}% (${getSoilCategory(m2).label})`;
+      else if (node.id === 'SEN-SM3') reading = `${m3}% (${getSoilCategory(m3).label})`;
+      else if (node.id === 'SEN-ACC2') reading = `${motion.theta2.toFixed(1)}° (${motion.mag2.toFixed(4)} m/s²)`;
+      else if (node.id === 'SEN-ACC1') reading = `${motion.theta1.toFixed(1)}° (${motion.mag1.toFixed(4)} m/s²)`;
+      else if (node.id === 'SEN-W01') reading = `${weightG} g Debris`;
+      else if (node.id === 'SEN-GPS1') reading = `${sats} Sats (Fix OK)`;
+      else if (node.id === 'SEN-SIM1') reading = '2G GPRS Online';
+
+      return `
+        <div style="background:var(--ls-surface-subtle);border:1px solid var(--ls-border-light);border-radius:12px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:10px;font-weight:800;color:var(--ls-primary);font-family:monospace">${node.id}</span>
+              <span style="font-size:12px;font-weight:700;color:var(--ls-text)">${node.name}</span>
+            </div>
+            <div style="font-size:10.5px;color:var(--ls-text-muted);margin-top:2px">${node.tier}</div>
+          </div>
+          <div style="text-align:right">
+            <span style="font-size:11px;font-weight:800;color:var(--ls-text)">${reading}</span>
+            <div style="font-size:9px;font-weight:700;color:#16A34A;margin-top:2px">● ACTIVE</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  /* ═════════════════════════════════════════════════════════════════════
+     POLE DETAILS PAGE RENDERER (TASK 2, 3, 4)
+     ═════════════════════════════════════════════════════════════════════ */
+  function openPoleDetails(poleId) {
+    activeDetailPoleId = (poleId === 'Pole-02' || poleId === 'pole_2' || poleId === 'POLE-02') ? 'Pole-02' : 'Pole-02';
+    switchPage('pole-details');
+    renderPoleDetailsUI();
+  }
+  window.openPoleDetails = openPoleDetails;
+
+  function refreshPoleTelemetry() {
+    showToast('Refreshing station telemetry…');
+    renderPoleDetailsUI();
+    initPoleHistoryChart();
+  }
+  window.refreshPoleTelemetry = refreshPoleTelemetry;
+
+  function renderPoleDetailsUI() {
+    const isP2 = activeDetailPoleId === 'Pole-02';
+    const now = Date.now();
+
+    const rain1h = (currentWeatherReading && currentWeatherReading.rain) ? Number(currentWeatherReading.rain) : 0;
+    const rain24hRaw = (currentWeatherReading && (currentWeatherReading.rain_24h !== undefined ? currentWeatherReading.rain_24h : currentWeatherReading.rain24h));
+    const rain24h = (rain24hRaw !== null && rain24hRaw !== undefined && Number.isFinite(Number(rain24hRaw))) ? Number(rain24hRaw) : 0;
+
+    const risk = getPoleRiskData(activeDetailPoleId);
+
+    if (isP2) {
+      const p2 = currentPole2Reading || POLE2_BASELINE;
+      const isOnline = pole2LastPacketAt > 0 && (now - pole2LastPacketAt <= STALE_THRESHOLD_MS);
+      const lastTimeStr = pole2LastPacketAt > 0 ? new Date(pole2LastPacketAt).toLocaleTimeString() : 'Baseline Active';
+
+      $id('detailPoleId').textContent = 'Pole 2 — Secondary Station (Enabled)';
+      $id('detailPoleMeta').textContent = `Sri Lanka Highlands • Fixed Deployment • Lat: ${POLE_LOCATIONS.pole2.lat.toFixed(6)}° Lon: ${POLE_LOCATIONS.pole2.lon.toFixed(6)}° (DMS: 8°21'33.2"N 80°30'14.2"E)`;
+      const p2Conn = getHardwareConnectionStatus(pole2LastPacketAt);
+      if ($id('detailSyncTime')) {
+        $id('detailSyncTime').textContent = `${p2Conn.label} (${lastTimeStr})`;
+        $id('detailSyncTime').style.color = p2Conn.color;
+      }
+
+      const s1 = p2.soil1 !== null && p2.soil1 !== undefined ? Math.round(p2.soil1) : 42;
+      const s2 = p2.soil2 !== null && p2.soil2 !== undefined ? Math.round(p2.soil2) : 36;
+      $id('detSM1').textContent = `${s1}% (${getSoilCategory(s1).label})`;
+      $id('detSM2').textContent = `${s2}% (${getSoilCategory(s2).label})`;
+      $id('detSM3').textContent = 'N/A (Unavailable on Pole 2)';
+
+      const ax = typeof p2.ax === 'number' ? p2.ax.toFixed(4) : '1.5700';
+      const ay = typeof p2.ay === 'number' ? p2.ay.toFixed(4) : '1.9600';
+      const az = typeof p2.az === 'number' ? p2.az.toFixed(4) : '2.4200';
+      if ($id('detAccel')) $id('detAccel').textContent = `X: ${ax}, Y: ${ay}, Z: ${az} m/s²`;
+
+      const p2Theta = Math.atan2(Math.hypot(Number(ax), Number(ay)), Math.abs(Number(az))) * 180 / Math.PI;
+      const p2Delta = Math.abs(p2Theta - POLE2_INITIAL_ANGLE);
+      $id('detTilt').textContent = `${p2Theta.toFixed(1)}° (Stable · Δ ${p2Delta.toFixed(4)}°)`;
+
+      $id('detWeight').textContent = (p2.weight !== undefined ? p2.weight : 0) + ' g';
+      if ($id('detBattery')) $id('detBattery').textContent = (p2.battery !== undefined ? p2.battery : 82) + '%';
+      $id('detGps').textContent = '8°21\'33.2"N 80°30\'14.2"E • Fixed Deployment (0 Sats Locked)';
+    } else {
+      const p1 = currentPole2Reading || {};
+      const isOnline = pole2LastPacketAt > 0 && (now - pole2LastPacketAt <= STALE_THRESHOLD_MS);
+      const lastTimeStr = pole2LastPacketAt > 0 ? new Date(pole2LastPacketAt).toLocaleTimeString() : 'Baseline Active';
+
+      $id('detailPoleId').textContent = 'Pole 2 — Primary Station (Enabled)';
+      $id('detailPoleMeta').textContent = `Sri Lanka Highlands • Central Slope • Lat: ${POLE_LOCATIONS.pole2.lat.toFixed(5)}° Lon: ${POLE_LOCATIONS.pole2.lon.toFixed(5)}°`;
+      const p1Conn = getHardwareConnectionStatus(pole2LastPacketAt);
+      if ($id('detailSyncTime')) {
+        $id('detailSyncTime').textContent = `${p1Conn.label} (${lastTimeStr})`;
+        $id('detailSyncTime').style.color = p1Conn.color;
+      }
+
+      const { m1, m2, m3 } = getMoistureValues(p1);
+      $id('detSM1').textContent = `${m1}% (${getSoilCategory(m1).label})`;
+      $id('detSM2').textContent = `${m2}% (${getSoilCategory(m2).label})`;
+      $id('detSM3').textContent = `${m3}% (${getSoilCategory(m3).label})`;
+
+      const mot = computeSensorMotion(p1);
+      if ($id('detAccel')) $id('detAccel').textContent = `X: ${mot.ax.toFixed(4)}, Y: ${mot.ay.toFixed(4)}, Z: ${mot.az.toFixed(4)} m/s²`;
+      $id('detTilt').textContent = `${mot.theta1.toFixed(1)}° (Stable · Δ ${mot.delta1.toFixed(4)}°)`;
+      $id('detWeight').textContent = (parseFloat(p1.weight) || 0) + ' g';
+      if ($id('detBattery')) $id('detBattery').textContent = (pickNumeric(p1, ['battery', 'batt', 'batteryPct', 'soc']) ?? 95) + '%';
+      const sats = parseInt(pickNumeric(p1, ['satellites', 'sats', 'gps_sats'])) || 8;
+      $id('detGps').textContent = `${sats} Sats (Fix OK · 8.359222°N 80.503944°E)`;
+    }
+
+    if ($id('detRain1h')) $id('detRain1h').textContent = rain1h.toFixed(1) + ' mm/h';
+    if ($id('detRain24h')) $id('detRain24h').textContent = rain24h.toFixed(1) + ' mm';
+
+    // Update detail gauge
+    if ($id('detailRiskBadge')) {
+      if (risk.isGenerated) {
+        $id('detailRiskBadge').textContent = 'SIMULATION · ' + risk.label.toUpperCase();
+        $id('detailRiskBadge').style.background = '#FEF3C7';
+        $id('detailRiskBadge').style.color = '#B45309';
+        $id('detailRiskBadge').style.borderColor = '#FCD34D';
+      } else {
+        $id('detailRiskBadge').textContent = risk.label.toUpperCase();
+        $id('detailRiskBadge').style.background = risk.badgeBg;
+        $id('detailRiskBadge').style.color = risk.color;
+        $id('detailRiskBadge').style.borderColor = risk.badgeBorder;
+      }
+    }
+    const detailStationName = isP2 ? 'Pole 2' : 'Pole 2';
+    if ($id('detailStatusLabel')) {
+      $id('detailStatusLabel').textContent = `${risk.label} — ${detailStationName}`;
+      $id('detailStatusLabel').style.color = risk.color;
+    }
+    if ($id('detailStatusDesc')) {
+      $id('detailStatusDesc').textContent = risk.desc;
+    }
+    const detNeedle = $id('detailGaugeNeedle');
+    if (detNeedle) {
+      detNeedle.style.transform = `rotate(${risk.angle}deg)`;
+      detNeedle.style.opacity = risk.isAvailable ? '1.0' : '0.35';
+    }
+
+    // Detail Combined Risk Source Breakdown Box
+    if ($id('detailStationSource')) {
+      $id('detailStationSource').textContent = detailStationName;
+    }
+    if ($id('detailLriSource')) {
+      $id('detailLriSource').textContent = risk.lriLabel || '--';
+      $id('detailLriSource').style.color = risk.lriColor || 'inherit';
+    }
+    if ($id('detailThresholdSource')) {
+      $id('detailThresholdSource').textContent = risk.thresholdLabel || '--';
+      $id('detailThresholdSource').style.color = risk.thresholdColor || 'inherit';
+    }
+    if ($id('detailCombinedSource')) {
+      $id('detailCombinedSource').textContent = risk.combinedLabel || risk.label || '--';
+      $id('detailCombinedSource').style.color = risk.color || 'inherit';
+    }
+    if ($id('detailGovSource')) {
+      $id('detailGovSource').textContent = risk.governingSource || detailStationName;
+    }
+    const detPktTime = isP2 ? pole2LastPacketAt : pole2LastPacketAt;
+    const detLastTimeStr = detPktTime > 0 ? new Date(detPktTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '--';
+    if ($id('detailRiskUpdated')) {
+      $id('detailRiskUpdated').textContent = detLastTimeStr;
+    }
+  }
+  window.renderPoleDetailsUI = renderPoleDetailsUI;
+
+  /* ═════════════════════════════════════════════════════════════════════
+     MAP & GEOLOCATION CONTROLLER
+     ═════════════════════════════════════════════════════════════════════ */
+  function buildActivePoles() {
+    activePoles = [
+      {
+        id: POLE_LOCATIONS.pole2.id,
+        name: POLE_LOCATIONS.pole2.name,
+        sub: POLE_LOCATIONS.pole2.sub,
+        lat: POLE_LOCATIONS.pole2.lat,
+        lon: POLE_LOCATIONS.pole2.lon,
+        color: POLE_LOCATIONS.pole2.color,
+        risk: getPoleRiskData('Pole-02').label
+      },
+      {
+        id: POLE_LOCATIONS.pole2.id,
+        name: POLE_LOCATIONS.pole2.name,
+        sub: POLE_LOCATIONS.pole2.sub,
+        lat: POLE_LOCATIONS.pole2.lat,
+        lon: POLE_LOCATIONS.pole2.lon,
+        color: POLE_LOCATIONS.pole2.color,
+        risk: getPoleRiskData('Pole-02').label
+      }
+    ];
+    calculateNearestPole();
+    if (leafletMapInstance) renderMapMarkers();
+  }
+
+  async function triggerLocateUser() {
+    showToast('Locating your position via GPS…');
+    try {
+      const pos = await LandSafeNative.getCurrentPosition();
+      userGeoLocation = pos;
+      if ($id('locPermStatusText')) {
+        $id('locPermStatusText').textContent = `Fixed: ${pos.lat.toFixed(4)}°, ${pos.lon.toFixed(4)}° (±${Math.round(pos.accuracy)}m)`;
+      }
+      showToast('GPS position acquired!');
+      updateLocationBarText();
+      calculateNearestPole();
+      updateTelemetryUI();
+      if (leafletMapInstance) updateMapUserPosition();
+    } catch (e) {
+      console.warn('Locate error:', e);
+      showToast('Could not get device GPS. Ensure location is enabled in settings.');
+    }
+  }
+  window.triggerLocateUser = triggerLocateUser;
+
+  function calculateNearestPole() {
+    const userLat = userGeoLocation ? userGeoLocation.lat : DEFAULT_LAT;
+    const userLon = userGeoLocation ? userGeoLocation.lon : DEFAULT_LON;
+
+    const d1 = LandSafeNative.haversineKm(userLat, userLon, POLE_LOCATIONS.pole2.lat, POLE_LOCATIONS.pole2.lon);
+    const d2 = LandSafeNative.haversineKm(userLat, userLon, POLE_LOCATIONS.pole2.lat, POLE_LOCATIONS.pole2.lon);
+
+    const now = Date.now();
+    const p1Online = pole2LastPacketAt > 0 && (now - pole2LastPacketAt <= STALE_THRESHOLD_MS);
+    const p2Online = pole2LastPacketAt > 0 && (now - pole2LastPacketAt <= STALE_THRESHOLD_MS);
+
+    const r1 = getPoleRiskData('Pole-02');
+    const r2 = getPoleRiskData('Pole-02');
+
+    const nearestInfo = getNearestPoleInfo();
+    const isNearest1 = nearestInfo.hasGps && nearestInfo.nearestPoleId === 'Pole-02';
+    const isNearest2 = nearestInfo.hasGps && nearestInfo.nearestPoleId === 'Pole-02';
+
+    const conn1 = getHardwareConnectionStatus(pole2LastPacketAt);
+    const conn2 = getHardwareConnectionStatus(pole2LastPacketAt);
+    const sub1 = $id('pole2Sub');
+    if (sub1) sub1.textContent = `Central Slope • ${d1.toFixed(2)} km away • ${conn1.label} • Risk: ${r1.label}${isNearest1 ? ' • (Nearest Station)' : ''}`;
+
+    const sub2 = $id('pole2Sub');
+    if (sub2) sub2.textContent = `Secondary Station • ${d2.toFixed(2)} km away • ${conn2.label} • Risk: ${r2.label}${isNearest2 ? ' • (Nearest Station)' : ''}`;
+  }
+
+  function initOrUpdateMap() {
+    const mapEl = $id('poleMap');
+    if (!mapEl) return;
+
+    if (!leafletMapInstance) {
+      leafletMapInstance = L.map('poleMap', {
+        zoomControl: false,
+        attributionControl: false
+      }).setView([DEFAULT_LAT, DEFAULT_LON], 15);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19
+      }).addTo(leafletMapInstance);
+
+      mapPolesLayer = L.layerGroup().addTo(leafletMapInstance);
+      renderMapMarkers();
+    } else {
+      leafletMapInstance.invalidateSize();
+    }
+
+    if (userGeoLocation) {
+      updateMapUserPosition();
+    }
+  }
+
+  function renderMapMarkers() {
+    if (!mapPolesLayer) return;
+    mapPolesLayer.clearLayers();
+
+    activePoles.forEach(p => {
+      const isP2 = p.id === 'Pole-02';
+      const markerHtml = `
+        <div style="width:32px;height:32px;border-radius:50%;background:${p.color};border:3px solid #FFFFFF;box-shadow:0 3px 10px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;color:#FFFFFF;font-weight:900;font-size:11px;">
+          ${isP2 ? 'P2' : 'P1'}
+        </div>
+      `;
+      const icon = L.divIcon({ className: '', html: markerHtml, iconSize: [32, 32], iconAnchor: [16, 16] });
+      const m = L.marker([p.lat, p.lon], { icon }).addTo(mapPolesLayer);
+      m.on('click', () => showMapPoleSheet(p));
+    });
+  }
+
+  function updateMapUserPosition() {
+    if (!leafletMapInstance || !userGeoLocation) return;
+    const { lat, lon } = userGeoLocation;
+
+    if (!userMapMarker) {
+      const icon = L.divIcon({
+        className: '',
+        html: '<div class="ls-user-pin"></div>',
+        iconSize: [22, 22],
+        iconAnchor: [11, 11]
+      });
+      userMapMarker = L.marker([lat, lon], { icon }).addTo(leafletMapInstance);
+    } else {
+      userMapMarker.setLatLng([lat, lon]);
+    }
+
+    leafletMapInstance.flyTo([lat, lon], 16, { duration: 1.2 });
+  }
+
+  function showMapPoleSheet(p) {
+    activeSheetPoleId = p.id;
+    const isP2 = p.id === 'Pole-02';
+    $id('sheetPoleName').textContent = p.name;
+    $id('sheetPoleMeta').textContent = isP2
+      ? `Lat: ${p.lat.toFixed(6)}° Lon: ${p.lon.toFixed(6)}° (Fixed Deployment)`
+      : `Lat: ${p.lat.toFixed(5)}° Lon: ${p.lon.toFixed(5)}° (Research Station)`;
+
+    const risk = getPoleRiskData(p.id);
+    $id('sheetRisk').textContent = risk.label;
+    $id('sheetRisk').style.color = risk.color;
+
+    if (isP2) {
+      const p2 = currentPole2Reading || POLE2_BASELINE;
+      $id('sheetSoil').textContent = `SM1: ${p2.soil1}% · SM2: ${p2.soil2}%`;
+      $id('sheetTilt').textContent = `${(p2.ax !== undefined ? 'Active' : '53.2°')}`;
+    } else {
+      const { avg } = getMoistureValues(currentPole2Reading);
+      $id('sheetSoil').textContent = `${avg}% (${getSoilCategory(avg).label})`;
+      const mot = computeSensorMotion(currentPole2Reading);
+      $id('sheetTilt').textContent = `${mot.theta1.toFixed(1)}°`;
+    }
+    $id('mapPoleSheet').style.display = 'block';
+  }
+
+  function closeMapSheet() {
+    $id('mapPoleSheet').style.display = 'none';
+  }
+  window.closeMapSheet = closeMapSheet;
+
+  function filterMapPoles(query) {
+    if (!leafletMapInstance) return;
+    const q = (query || '').toLowerCase();
+    const match = activePoles.find(p => p.name.toLowerCase().includes(q) || p.id.toLowerCase().includes(q));
+    if (match) {
+      leafletMapInstance.flyTo([match.lat, match.lon], 16);
+      showMapPoleSheet(match);
+    }
+  }
+  window.filterMapPoles = filterMapPoles;
+
+  /* ═════════════════════════════════════════════════════════════════════
+     HISTORICAL TELEMETRY TRENDS (ECHARTS)
+     ═════════════════════════════════════════════════════════════════════ */
+  function initPoleHistoryChart() {
+    const el = $id('poleHistoryChart');
+    if (!el || typeof echarts === 'undefined') return;
+
+    if (!historyEChart) {
+      historyEChart = echarts.init(el);
+    }
+
+    let times = [];
+    let soilData = [];
+    let rainData = [];
+
+    const isP2 = activeDetailPoleId === 'Pole-02';
+
+    if (isP2) {
+      times = ['06:00', '08:00', '10:00', '12:00', '14:00', '16:00', 'Now'];
+      const p2 = currentPole2Reading || POLE2_BASELINE;
+      const sAvg = Math.round(((p2.soil1 ?? 42) + (p2.soil2 ?? 36)) / 2);
+      soilData = [sAvg, sAvg, sAvg, sAvg, sAvg, sAvg, sAvg];
+      const r = currentWeatherReading ? Number(currentWeatherReading.rain || 0) : 0;
+      rainData = [0, 0, 0, 0, 0, 0, r];
+    } else {
+      if (recentSensorRecords && recentSensorRecords.length > 0) {
+        recentSensorRecords.slice(-10).forEach(r => {
+          const t = packetTimeMs(r._key, r);
+          const timeStr = t ? new Date(t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--';
+          const { avg } = getMoistureValues(r);
+          times.push(timeStr);
+          soilData.push(avg);
+          rainData.push(parseFloat(r.rain || r.rain1h || (currentWeatherReading && currentWeatherReading.rain) || 0));
+        });
+      }
+      if (times.length === 0) {
+        times = ['06:00', '08:00', '10:00', '12:00', '14:00', '16:00', 'Now'];
+        soilData = [40, 40, 40, 40, 40, 40, 40];
+        rainData = [0, 0, 0, 0, 0, 0, (currentWeatherReading ? Number(currentWeatherReading.rain || 0) : 0)];
+      }
+    }
+
+    const option = {
+      tooltip: { trigger: 'axis' },
+      grid: { top: 30, right: 15, bottom: 25, left: 35 },
+      xAxis: {
+        type: 'category',
+        data: times,
+        axisLine: { lineStyle: { color: '#CBD5E1' } },
+        axisLabel: { color: '#64748B', fontSize: 10 }
+      },
+      yAxis: {
+        type: 'value',
+        axisLine: { show: false },
+        splitLine: { lineStyle: { color: '#F1F5F9' } },
+        axisLabel: { color: '#64748B', fontSize: 10 }
+      },
+      series: [
+        {
+          name: 'Soil Moisture (%)',
+          type: 'line',
+          smooth: true,
+          data: soilData,
+          itemStyle: { color: isP2 ? '#EA580C' : '#0284C7' },
+          areaStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: isP2 ? 'rgba(234,88,12,0.3)' : 'rgba(2,132,199,0.3)' },
+              { offset: 1, color: isP2 ? 'rgba(234,88,12,0.0)' : 'rgba(2,132,199,0.0)' }
+            ])
+          }
+        },
+        {
+          name: 'Rainfall (mm)',
+          type: 'bar',
+          data: rainData,
+          itemStyle: { color: '#38BDF8', borderRadius: [4, 4, 0, 0] }
+        }
+      ]
+    };
+
+    historyEChart.setOption(option);
+  }
+
+  /* ═════════════════════════════════════════════════════════════════════
+     ALERTS ENGINE
+     ═════════════════════════════════════════════════════════════════════ */
+  let currentAlertFilter = 'all';
+  let allAlertItems = [];
+
+  function getAcknowledgedAlerts() {
+    try {
+      const raw = localStorage.getItem('acknowledged_alert_ids');
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function getDeletedAlerts() {
+    try {
+      const raw = localStorage.getItem('deleted_alert_ids');
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function dismissAlertLocally(alertId) {
+    try {
+      const delList = getDeletedAlerts();
+      if (!delList.includes(alertId)) {
+        delList.push(alertId);
+        localStorage.setItem('deleted_alert_ids', JSON.stringify(delList));
+      }
+      showToast('Alert dismissed');
+      mergeAndRenderAlerts();
+    } catch (e) {
+      console.warn('Dismiss error:', e);
+    }
+  }
+  window.dismissAlertLocally = dismissAlertLocally;
+
+  function acknowledgeAlert(alertId) {
+    try {
+      const ackList = getAcknowledgedAlerts();
+      if (!ackList.includes(alertId)) {
+        ackList.push(alertId);
+        localStorage.setItem('acknowledged_alert_ids', JSON.stringify(ackList));
+      }
+      showToast('Alert acknowledged.');
+      mergeAndRenderAlerts();
+    } catch (e) {
+      console.warn('Acknowledge error:', e);
+    }
+  }
+  window.acknowledgeAlert = acknowledgeAlert;
+
+  function checkAndGenerateAlerts(sm, tiltDev, rain) {
+    if (sm >= 80) {
+      pushDynamicAlert('Critical Soil Saturation', 'CRITICAL', 'SEN-SM1', `Critically high soil moisture: ${sm}%. Immediate slope saturation alert.`);
+    } else if (sm >= 65) {
+      pushDynamicAlert('Soil Saturation Warning', 'WARNING', 'SEN-SM1', `Elevated soil moisture: ${sm}%. Increased slope pore pressure.`);
+    }
+    if (tiltDev >= 3.0) {
+      pushDynamicAlert('Ground Displacement', 'CRITICAL', 'SEN-ACC1', `Excessive ground tilt shift: Δ ${tiltDev.toFixed(2)}°. Structural displacement warning.`);
+    }
+    if (rain > 15) {
+      pushDynamicAlert('Monsoon Rainfall Warning', 'WARNING', 'Weather API', `High rainfall intensity: ${rain.toFixed(1)} mm/h. Drainage runoff watch.`);
+    }
+  }
+
+  function pushDynamicAlert(type, severity, nodeId, reason) {
+    const exists = localDynamicAlerts.some(a => a.type === type);
+    if (exists) return;
+    const newAlert = {
+      id: 'DYN-' + Date.now().toString(36),
+      type: type,
+      title: type,
+      reason: reason,
+      message: reason,
+      severity: severity,
+      priority: severity.toLowerCase(),
+      target: 'all',
+      nodeId: nodeId,
+      community: 'LandSafe Automated Telemetry',
+      createdAt: Date.now(),
+      status: 'Active'
+    };
+    localDynamicAlerts.unshift(newAlert);
+    if (localDynamicAlerts.length > 5) localDynamicAlerts.pop();
+    mergeAndRenderAlerts();
+  }
+
+  function mergeAndRenderAlerts() {
+    const ackList = new Set(getAcknowledgedAlerts());
+    const delSet = new Set(getDeletedAlerts());
+    const subs = (window.LandSafeNative && typeof window.LandSafeNative.getPoleSubscriptions === 'function')
+      ? window.LandSafeNative.getPoleSubscriptions()
+      : { pole_2: true, pole_2: true };
+
+    const merged = [];
+    const seenIds = new Set();
+
+    const processAlert = (item) => {
+      if (!item || !item.id || seenIds.has(item.id) || delSet.has(item.id)) return;
+
+      const target = item.target || 'all';
+      if (target === 'pole_2' && subs.pole_2 === false) return;
+      if (target === 'pole_2' && subs.pole_2 === false) return;
+
+      seenIds.add(item.id);
+
+      const isAck = ackList.has(item.id) || (item.status || '').toLowerCase() === 'acknowledged';
+      const normSeverity = (item.priority || item.severity || 'REGULAR').toUpperCase();
+      const formattedTarget = target === 'pole_2' ? 'Pole 2' : target === 'pole_2' ? 'Pole 2' : 'All Devices';
+
+      merged.push({
+        id: item.id,
+        title: item.title || item.type || 'Hazard Warning',
+        body: item.message || item.reason || item.description || 'Threshold monitored on slope terrain.',
+        severity: normSeverity,
+        target: formattedTarget,
+        nodeId: item.nodeId || (target === 'pole_2' ? 'Pole 2 (Upper)' : target === 'pole_2' ? 'Pole 2 (Lower)' : 'Network-Wide'),
+        community: item.community || item.creatorEmail || (item.createdBy === 'admin' ? 'LandSafe Admin Gateway' : 'Disaster Management Centre (DMC)'),
+        createdAt: item.createdAt || Date.now(),
+        status: isAck ? 'Acknowledged' : (item.status && item.status !== 'Pending' ? item.status : 'Active'),
+        isAck
+      });
+    };
+
+    rawManualAlerts.forEach(processAlert);
+    rawAutomatedAlerts.forEach(processAlert);
+    localDynamicAlerts.forEach(processAlert);
+
+    merged.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    allAlertItems = merged;
+
+    updateAlertsUI();
+  }
+
+  function filterAlerts(category, btn) {
+    currentAlertFilter = category;
+    document.querySelectorAll('.ls-filter-pill').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    const hotlineSection = $id('hotlineDirectory');
+    const alertsSection = $id('alertsSection');
+
+    if (category === 'hotlines') {
+      if (alertsSection) alertsSection.style.display = 'none';
+      if (hotlineSection) {
+        hotlineSection.style.display = 'block';
+        hotlineSection.scrollIntoView({ behavior: 'smooth' });
+      }
+      return;
+    }
+
+    if (alertsSection) alertsSection.style.display = 'block';
+    if (hotlineSection) hotlineSection.style.display = 'none';
+
+    updateAlertsUI();
+  }
+  window.filterAlerts = filterAlerts;
+
+  function updateAlertsUI() {
+    const container = $id('alertsContainer');
+    const empty = $id('emptyAlertsView');
+    if (!container) return;
+
+    let filtered = allAlertItems;
+    if (currentAlertFilter === 'critical') {
+      filtered = filtered.filter(a => (a.severity || '').toUpperCase() === 'CRITICAL');
+    } else if (currentAlertFilter === 'regular' || currentAlertFilter === 'warning') {
+      filtered = filtered.filter(a => (a.severity || '').toUpperCase() === 'REGULAR' || (a.severity || '').toUpperCase() === 'WARNING' || (a.severity || '').toUpperCase() === 'INFO');
+    }
+
+    const unreadCount = filtered.filter(a => a.status === 'Active' && !a.isAck).length;
+    const badge1 = $id('topAlertBadge');
+    const badge2 = $id('navAlertBadge');
+    if (badge1) { badge1.textContent = unreadCount; badge1.style.display = unreadCount > 0 ? 'flex' : 'none'; }
+    if (badge2) { badge2.textContent = unreadCount; badge2.style.display = unreadCount > 0 ? 'flex' : 'none'; }
+
+    if (!filtered.length) {
+      container.innerHTML = '';
+      if (empty) empty.style.display = 'block';
+      return;
+    }
+    if (empty) empty.style.display = 'none';
+
+    container.innerHTML = filtered.map(a => {
+      const sev = (a.severity || 'REGULAR').toUpperCase();
+      const isCrit = sev === 'CRITICAL';
+      const isWarn = sev === 'WARNING';
+      const isAck = a.isAck || (a.status || '').toLowerCase() === 'acknowledged';
+      const badgeCls = isCrit ? 'background:#FEE2E2;color:#DC2626;border:1px solid #FCA5A5' : isWarn ? 'background:#FEF3C7;color:#D97706;border:1px solid #FCD34D' : 'background:#EFF6FF;color:#2563EB;border:1px solid #BFDBFE';
+      const timeStr = a.createdAt ? new Date(a.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently';
+      const agency = a.community || 'Disaster Management Centre (DMC)';
+      return `
+        <div class="ls-alert-card ${isCrit ? 'critical' : isWarn ? 'warning' : ''}">
+          <div class="ls-alert-top">
+            <div style="display:flex;align-items:center;gap:6px">
+              <span class="ls-alert-badge" style="${badgeCls}">${isCrit ? 'Critical Alert' : isWarn ? 'Warning Alert' : 'System Alert'}</span>
+              <span style="font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:4px;background:${isAck ? 'var(--ls-surface-subtle)' : '#DCFCE7'};color:${isAck ? 'var(--ls-text-faint)' : '#15803D'}">${isAck ? 'Acknowledged' : 'Active'}</span>
+              <span style="font-size:9.5px;font-weight:600;padding:1px 6px;border-radius:4px;background:#F1F5F9;color:#475569">Target: ${a.target || 'All'}</span>
+            </div>
+            <span style="font-size:10px;color:var(--ls-text-faint)">${timeStr}</span>
+          </div>
+          <div class="ls-alert-title">${a.title}</div>
+          <div class="ls-alert-body">${a.body}</div>
+          <div class="ls-alert-foot">
+            <span>${agency}</span>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-weight:700;color:var(--ls-primary);font-size:10.5px">${a.nodeId}</span>
+              ${!isAck ? `<button class="ls-ack-btn" onclick="acknowledgeAlert('${a.id}')">Ack</button>` : ''}
+              <button class="ls-ack-btn" style="background:rgba(239,68,68,0.1);color:#DC2626;border-color:rgba(239,68,68,0.3)" onclick="dismissAlertLocally('${a.id}')" title="Dismiss alert">Dismiss</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ══════════════════════ BOOT SEQUENCE ══════════════════════
+  window.addEventListener('DOMContentLoaded', () => {
+    buildActivePoles();
+    initFirebase();
+    fetchRealtimeWeather();
+    updateAlertsUI();
+    if (window.LandSafeNative && typeof window.LandSafeNative.initPush === 'function') {
+      window.LandSafeNative.initPush();
+    }
+  });
+  </script>
+</body>
+</html>
